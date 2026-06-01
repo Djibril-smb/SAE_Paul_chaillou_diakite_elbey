@@ -16,9 +16,11 @@ namespace SAE_Paul
     /// </summary>
     public partial class MainWindow : Window
     {
+        PageLogin ucLog = new PageLogin();
         public MainWindow()
         {
             InitializeComponent();
+            GridPrincipale.Children.Add(ucLog);
         }
     }
 }
