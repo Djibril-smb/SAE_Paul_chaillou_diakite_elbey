@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Ne pas envoyer le fichier d'accès aux données
+DataAccess.cs
