@@ -18,11 +18,13 @@ namespace SAE_Paul.uc
     /// <summary>
     /// Logique d'interaction pour ucPageAccueil.xaml
     /// </summary>
-    public partial class ucPageAccueil : UserControl
+    public partial class ucPageAccueilVendeur : UserControl
     {
-        public ucPageAccueil()
+        public ucPageAccueilVendeur()
         {
             InitializeComponent();
         }
+
+     
     }
 }
