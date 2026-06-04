@@ -3,21 +3,49 @@ using Npgsql;
 
 namespace SAE_Paul.Metier
 {
-
     public class Client
     {
-        public int ClientId { get; set; }
-        public string Nom { get; set; }
-        public string? Prenom { get; set; }
-        public string Telephone { get; set; }
-        public string? Mail { get; set; }
+        private int clientId;
+        private string nom;
+        private string? prenom;
+        private string telephone;
+        private string? mail;
+
+        public int ClientId
+        {
+            get => clientId;
+            set => clientId = value;
+        }
+        public string Nom
+        {
+            get => nom;
+            set => nom = value;
+        }
+        public string? Prenom
+        {
+            get => prenom;
+            set => prenom = value;
+        }
+        public string Telephone
+        {
+            get => telephone;
+            set => telephone = value;
+        }
+        public string? Mail
+        {
+            get => mail;
+            set => mail = value;
+        }
 
         public Client()
         {
-            Nom = "";
-            Telephone = "";
+            nom = "";
+            telephone = "";
         }
 
+        /// <summary>
+        /// Retourne tous les clients, tries par nom puis prenom.
+        /// </summary>
         public static List<Client> Lister()
         {
             List<Client> resultat = new List<Client>();
@@ -86,33 +114,31 @@ namespace SAE_Paul.Metier
 
                 using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
                 {
-                    cmd.Parameters.AddWithValue("nom", Nom);
-                    cmd.Parameters.AddWithValue("prenom", (object?)Prenom ?? System.DBNull.Value);
-                    cmd.Parameters.AddWithValue("telephone", Telephone);
-                    cmd.Parameters.AddWithValue("mail", (object?)Mail ?? System.DBNull.Value);
+                    cmd.Parameters.AddWithValue("nom", nom);
+                    cmd.Parameters.AddWithValue("prenom", (object?)prenom ?? System.DBNull.Value);
+                    cmd.Parameters.AddWithValue("telephone", telephone);
+                    cmd.Parameters.AddWithValue("mail", (object?)mail ?? System.DBNull.Value);
 
                     // ExecuteScalar = recupere la 1re colonne de la 1re ligne (ici CLIENT_ID).
-                    ClientId = (int)cmd.ExecuteScalar()!;
+                    clientId = (int)cmd.ExecuteScalar()!;
                 }
             }
         }
 
         /// <summary>
         /// Fabrique un objet Client a partir de la ligne courante du lecteur.
-        /// (Evite de repeter le meme code dans Lister et Rechercher.)
         /// </summary>
         private static Client LireDepuis(NpgsqlDataReader lecteur)
         {
-            return new Client
-            {
-                ClientId = lecteur.GetInt32(lecteur.GetOrdinal("CLIENT_ID")),
-                Nom = lecteur.GetString(lecteur.GetOrdinal("NOM")),
-                Prenom = lecteur.IsDBNull(lecteur.GetOrdinal("PRENOM"))
-                            ? null : lecteur.GetString(lecteur.GetOrdinal("PRENOM")),
-                Telephone = lecteur.GetString(lecteur.GetOrdinal("TELEPHONE")),
-                Mail = lecteur.IsDBNull(lecteur.GetOrdinal("MAIL"))
-                            ? null : lecteur.GetString(lecteur.GetOrdinal("MAIL"))
-            };
+            Client c = new Client();
+            c.ClientId = lecteur.GetInt32(lecteur.GetOrdinal("CLIENT_ID"));
+            c.Nom = lecteur.GetString(lecteur.GetOrdinal("NOM"));
+            c.Prenom = lecteur.IsDBNull(lecteur.GetOrdinal("PRENOM"))
+                            ? null : lecteur.GetString(lecteur.GetOrdinal("PRENOM"));
+            c.Telephone = lecteur.GetString(lecteur.GetOrdinal("TELEPHONE"));
+            c.Mail = lecteur.IsDBNull(lecteur.GetOrdinal("MAIL"))
+                            ? null : lecteur.GetString(lecteur.GetOrdinal("MAIL"));
+            return c;
         }
     }
 }

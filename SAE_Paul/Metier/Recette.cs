@@ -1,19 +1,36 @@
 namespace SAE_Paul.Metier
 {
-    /// <summary>
-    /// Recette (le "modele" d'un produit : un nom, une categorie, une description).
-    /// Table RECETTE. Une recette peut etre declinee en plusieurs Produits (tailles/parts).
-    /// </summary>
     public class Recette
     {
-        public int RecetteId { get; set; }
-        public int CategorieId { get; set; }
-        public string RecetteNom { get; set; }
-        public string? RecetteDescription { get; set; }
+        private int recetteId;
+        private int categorieId;
+        private string recetteNom;
+        private string? recetteDescription;
+
+        public int RecetteId
+        {
+            get => recetteId;
+            set => recetteId = value;
+        }
+        public int CategorieId
+        {
+            get => categorieId;
+            set => categorieId = value;
+        }
+        public string RecetteNom
+        {
+            get => recetteNom;
+            set => recetteNom = value;
+        }
+        public string? RecetteDescription
+        {
+            get => recetteDescription;
+            set => recetteDescription = value;
+        }
 
         public Recette()
         {
-            RecetteNom = "";
+            recetteNom = "";
         }
     }
 }

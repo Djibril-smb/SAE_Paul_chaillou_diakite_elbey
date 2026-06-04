@@ -1,14 +1,24 @@
 namespace SAE_Paul.Metier
 {
-    /// <summary>Allergene present dans une recette. Table ALLERGENE.</summary>
     public class Allergene
     {
-        public int AllergeneId { get; set; }
-        public string AllergeneNom { get; set; }
+        private int allergeneId;
+        private string allergeneNom;
+
+        public int AllergeneId
+        {
+            get => allergeneId;
+            set => allergeneId = value;
+        }
+        public string AllergeneNom
+        {
+            get => allergeneNom;
+            set => allergeneNom = value;
+        }
 
         public Allergene()
         {
-            AllergeneNom = "";
+            allergeneNom = "";
         }
     }
 }

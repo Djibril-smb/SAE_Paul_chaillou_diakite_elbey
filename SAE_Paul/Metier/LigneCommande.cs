@@ -1,15 +1,32 @@
 namespace SAE_Paul.Metier
 {
-    /// <summary>
-    /// Une ligne d'une commande : un produit, une quantite, et s'il doit etre decoupe.
-    /// Table LIGNE_COMMANDE (cle primaire = COMMANDE_ID + PRODUIT_ID).
-    /// </summary>
     public class LigneCommande
     {
-        public int CommandeId { get; set; }
-        public int ProduitId { get; set; }
-        public int Quantite { get; set; }
-        public bool EstDecoupe { get; set; }
+        private int commandeId;
+        private int produitId;
+        private int quantite;
+        private bool estDecoupe;
+
+        public int CommandeId
+        {
+            get => commandeId;
+            set => commandeId = value;
+        }
+        public int ProduitId
+        {
+            get => produitId;
+            set => produitId = value;
+        }
+        public int Quantite
+        {
+            get => quantite;
+            set => quantite = value;
+        }
+        public bool EstDecoupe
+        {
+            get => estDecoupe;
+            set => estDecoupe = value;
+        }
 
         public LigneCommande()
         {

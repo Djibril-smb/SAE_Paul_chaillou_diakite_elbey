@@ -1,14 +1,24 @@
 namespace SAE_Paul.Metier
 {
-    /// <summary>Categorie de recette (Gateaux, Viennoiseries, Pains). Table CATEGORIE.</summary>
     public class Categorie
     {
-        public int CategorieId { get; set; }
-        public string CategorieNom { get; set; }
+        private int categorieId;
+        private string categorieNom;
+
+        public int CategorieId
+        {
+            get => categorieId;
+            set => categorieId = value;
+        }
+        public string CategorieNom
+        {
+            get => categorieNom;
+            set => categorieNom = value;
+        }
 
         public Categorie()
         {
-            CategorieNom = "";
+            categorieNom = "";
         }
     }
 }

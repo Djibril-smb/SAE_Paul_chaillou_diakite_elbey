@@ -3,30 +3,85 @@ using System.Collections.Generic;
 
 namespace SAE_Paul.Metier
 {
-    /// <summary>
-    /// Une commande passee par un client pour un evenement. Table COMMANDE.
-    /// Regle metier du sujet : l'acompte vaut le quart du total (Acompte = Total / 4).
-    /// </summary>
     public class Commande
     {
-        public int CommandeId { get; set; }
-        public int? CategorieEvenementId { get; set; }
-        public int ClientId { get; set; }
-        public DateTime DateCreation { get; set; }
-        public DateTime DateRetrait { get; set; }
-        public decimal Acompte { get; set; }
-        public bool EstPrete { get; set; }
-        public bool EstRecuperee { get; set; }
-        public decimal Total { get; set; }
-        public DateTime? DateEvenement { get; set; }
-        public int? NbPersonne { get; set; }
+        private int commandeId;
+        private int? categorieEvenementId;
+        private int clientId;
+        private DateTime dateCreation;
+        private DateTime dateRetrait;
+        private decimal acompte;
+        private bool estPrete;
+        private bool estRecuperee;
+        private decimal total;
+        private DateTime? dateEvenement;
+        private int? nbPersonne;
+        private List<LigneCommande> lignes;
 
-        // Lignes de la commande (en memoire : remplies/lues a part dans LIGNE_COMMANDE).
-        public List<LigneCommande> Lignes { get; set; }
+        public int CommandeId 
+        { 
+            get => commandeId; 
+            set => commandeId = value; 
+        }
+        public int? CategorieEvenementId 
+        { 
+            get => categorieEvenementId;
+            set => categorieEvenementId = value; 
+        }
+        
+        public int ClientId 
+        { 
+            get => clientId;
+            set => clientId = value; 
+        }
+        public DateTime DateCreation 
+        { 
+            get => dateCreation;
+            set => dateCreation = value; 
+        }
+        public DateTime DateRetrait 
+        {   get => dateRetrait;
+            set => dateRetrait = value; 
+        }
+        public decimal Acompte 
+        {   get => acompte;
+            set => acompte = value; 
+        }
+        public bool EstPrete 
+        { 
+            get => estPrete;
+            set => estPrete = value; 
+        }
+        public bool EstRecuperee 
+        { 
+            get => estRecuperee;
+            set => estRecuperee = value; 
+        }
+        public decimal Total 
+        { 
+            get => total; 
+            set => total = value; 
+        }
+        public DateTime? DateEvenement 
+        { 
+            get => dateEvenement;
+            set => dateEvenement = value; 
+        }
+        public int? NbPersonne 
+        { 
+            get => nbPersonne;
+            set => nbPersonne = value; 
+        }
+        public List<LigneCommande> Lignes 
+        {
+            get => lignes;
+            set => lignes = value; 
+        }
+
 
         public Commande()
         {
-            Lignes = new List<LigneCommande>();
+            lignes = new List<LigneCommande>();
         }
     }
 }

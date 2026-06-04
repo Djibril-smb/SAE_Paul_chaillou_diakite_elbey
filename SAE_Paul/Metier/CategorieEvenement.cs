@@ -1,14 +1,24 @@
 namespace SAE_Paul.Metier
 {
-    /// <summary>Type d'evenement associe a une commande (Mariage, Anniversaire...). Table CATEGORIE_EVENEMENT.</summary>
     public class CategorieEvenement
     {
-        public int CategorieEvenementId { get; set; }
-        public string CategorieEvenementNom { get; set; }
+        private int categorieEvenementId;
+        private string categorieEvenementNom;
+
+        public int CategorieEvenementId
+        {
+            get => categorieEvenementId;
+            set => categorieEvenementId = value;
+        }
+        public string CategorieEvenementNom
+        {
+            get => categorieEvenementNom;
+            set => categorieEvenementNom = value;
+        }
 
         public CategorieEvenement()
         {
-            CategorieEvenementNom = "";
+            categorieEvenementNom = "";
         }
     }
 }

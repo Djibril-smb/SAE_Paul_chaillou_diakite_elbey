@@ -2,18 +2,31 @@ using Npgsql;
 
 namespace SAE_Paul.Metier
 {
-   
     public class Utilisateur
     {
-        public string Login { get; set; }
-        public string Role { get; set; }
+        private string login;
+        private string role;
+
+        public string Login
+        {
+            get => login;
+            set => login = value;
+        }
+        public string Role
+        {
+            get => role;
+            set => role = value;
+        }
 
         public Utilisateur()
         {
-            Login = "";
-            Role = "";
+            login = "";
+            role = "";
         }
 
+        /// <summary>
+        /// Cherche un utilisateur par son login. Retourne null s'il n'existe pas.
+        /// </summary>
         public static Utilisateur? Trouver(string login)
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -28,17 +41,16 @@ namespace SAE_Paul.Metier
                     {
                         if (lecteur.Read())
                         {
-                            return new Utilisateur
-                            {
-                                Login = lecteur.GetString(0),
-                                Role = lecteur.GetString(1)
-                            };
+                            Utilisateur u = new Utilisateur();
+                            u.Login = lecteur.GetString(0);
+                            u.Role = lecteur.GetString(1);
+                            return u;
                         }
                     }
                 }
             }
 
-            return null; 
+            return null;
         }
     }
 }
