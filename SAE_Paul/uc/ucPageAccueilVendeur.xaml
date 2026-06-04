@@ -17,8 +17,8 @@
                 </StackPanel>
             </Border>
 
-            <Button x:Name="BtnProfil" HorizontalAlignment="Right" VerticalAlignment="Top" 
-                    Width="60" Height="60" Cursor="Hand" >
+            <Button x:Name="BtnProfil" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Width="60" Height="60" Cursor="Hand" Click="BtnProfil_Click" >
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Grid>
@@ -68,7 +68,7 @@
                 </Button.Template>
             </Button>
 
-            <Button x:Name="BtnClients" Grid.Column="2" Margin="15,0" >
+            <Button x:Name="BtnClients" Grid.Column="2" Margin="15,0" Click="BtnClients_Click" >
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="#231F20" CornerRadius="25">

@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SAE_Paul.uc
 {
     /// <summary>
-    /// Logique d'interaction pour ucPageAccueil.xaml
+    /// Ecran d'accueil du vendeur : acces aux Produits, Commandes et Clients.
     /// </summary>
     public partial class ucPageAccueilVendeur : UserControl
     {
@@ -25,6 +13,15 @@ namespace SAE_Paul.uc
             InitializeComponent();
         }
 
-     
+        private void BtnClients_Click(object sender, RoutedEventArgs e)
+        {
+            ((MainWindow)Application.Current.MainWindow).Naviguer(new ucListeClients());
+        }
+
+        private void BtnProfil_Click(object sender, RoutedEventArgs e)
+        {
+            // Deconnexion : retour a l'ecran de login.
+            ((MainWindow)Application.Current.MainWindow).Naviguer(new PageLogin());
+        }
     }
 }

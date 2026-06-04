@@ -1,0 +1,202 @@
+/*==============================================================*/
+/* Jeu d'essais - Boulangerie Paul                              */
+/* Donnees realistes basees sur le sujet (prix du sujet).       */
+/* Script re-executable : on vide d'abord les tables.           */
+/*==============================================================*/
+SET client_encoding TO 'UTF8';
+
+/* --- Nettoyage (ordre inverse des dependances) --- */
+DELETE FROM LIGNE_COMMANDE;
+DELETE FROM COMMANDE;
+DELETE FROM RECETTE_ALLERGENE;
+DELETE FROM PRODUIT;
+DELETE FROM RECETTE;
+DELETE FROM CLIENT;
+DELETE FROM CATEGORIE_EVENEMENT;
+DELETE FROM CATEGORIE;
+DELETE FROM ALLERGENE;
+DELETE FROM UTILISATEUR;
+
+/*==============================================================*/
+/* CATEGORIE                                                    */
+/*==============================================================*/
+INSERT INTO CATEGORIE (CATEGORIE_NOM) VALUES
+  ('Gâteaux'),
+  ('Viennoiseries'),
+  ('Pains');
+
+/*==============================================================*/
+/* CATEGORIE_EVENEMENT                                          */
+/*==============================================================*/
+INSERT INTO CATEGORIE_EVENEMENT (CATEGORIE_EVENEMENT_NOM) VALUES
+  ('Mariage'),
+  ('Anniversaire'),
+  ('Fête'),
+  ('Religieux'),
+  ('Naissance'),
+  ('Réunion'),
+  ('Pot de départ'),
+  ('Portes ouvertes');
+
+/*==============================================================*/
+/* ALLERGENE                                                    */
+/*==============================================================*/
+INSERT INTO ALLERGENE (ALLERGENE_NOM) VALUES
+  ('Gluten'),
+  ('Œufs'),
+  ('Lait'),
+  ('Fruits à coque'),
+  ('Soja'),
+  ('Sésame'),
+  ('Sulfites');
+
+/*==============================================================*/
+/* RECETTE  (categorie referencee par son nom)                  */
+/*==============================================================*/
+INSERT INTO RECETTE (CATEGORIE_ID, RECETTE_NOM, RECETTE_DESCRIPTION) VALUES
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Gâteaux'),       'Fraisier',                'Génoise légère garnie de crème diplomate et de fraises fraîches'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Gâteaux'),       'Opéra',                   'Superposition de biscuit amande, crème au café et ganache chocolat'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Gâteaux'),       'Royal chocolat',          'Base croustillante au praliné, mousse au chocolat noir'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Gâteaux'),       'Tarte aux fruits',        'Pâte sablée, crème pâtissière, fruits frais de saison'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Gâteaux'),       'Entremets personnalisé',  'Formes, parfums et décors à la demande'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Viennoiseries'), 'Croissant',               'Feuilletage au beurre, doré au four'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Viennoiseries'), 'Pain au chocolat',        'Pâte levée feuilletée avec barres de chocolat noir'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Viennoiseries'), 'Chausson aux pommes',     'Compote de pomme maison, pâte croustillante'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Viennoiseries'), 'Brioche tressée',         'Pâte moelleuse légèrement sucrée, tressée à la main'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Viennoiseries'), 'Mini-viennoiseries',      'Petits formats assortis adaptés aux buffets'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Pains'),         'Pain de campagne',        'Mélange de blé et seigle, mie dense, goût légèrement acidulé'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Pains'),         'Pain complet',            'Farine intégrale, source de fibres, goût plus soutenu'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Pains'),         'Baguette tradition',      'Farine de blé T65, croûte dorée, mie aérée'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Pains'),         'Pain aux noix',           'Farine blanche et noix, idéal pour accompagner les fromages'),
+  ((SELECT CATEGORIE_ID FROM CATEGORIE WHERE CATEGORIE_NOM='Pains'),         'Focaccia aux olives',     'Farine blanche, huile d''olive, pain plat garni servi à l''apéritif');
+
+/*==============================================================*/
+/* RECETTE_ALLERGENE  (recette + allergene references par nom)  */
+/*==============================================================*/
+INSERT INTO RECETTE_ALLERGENE (RECETTE_ID, ALLERGENE_ID)
+SELECT r.RECETTE_ID, a.ALLERGENE_ID
+FROM RECETTE r, ALLERGENE a
+WHERE (r.RECETTE_NOM='Fraisier'               AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait'))
+   OR (r.RECETTE_NOM='Opéra'                  AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait','Fruits à coque'))
+   OR (r.RECETTE_NOM='Royal chocolat'         AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait','Fruits à coque','Soja'))
+   OR (r.RECETTE_NOM='Tarte aux fruits'       AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait'))
+   OR (r.RECETTE_NOM='Entremets personnalisé' AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait'))
+   OR (r.RECETTE_NOM='Croissant'              AND a.ALLERGENE_NOM IN ('Gluten','Lait'))
+   OR (r.RECETTE_NOM='Pain au chocolat'       AND a.ALLERGENE_NOM IN ('Gluten','Lait','Soja'))
+   OR (r.RECETTE_NOM='Chausson aux pommes'    AND a.ALLERGENE_NOM IN ('Gluten','Lait'))
+   OR (r.RECETTE_NOM='Brioche tressée'        AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait'))
+   OR (r.RECETTE_NOM='Mini-viennoiseries'     AND a.ALLERGENE_NOM IN ('Gluten','Œufs','Lait'))
+   OR (r.RECETTE_NOM='Pain de campagne'       AND a.ALLERGENE_NOM IN ('Gluten'))
+   OR (r.RECETTE_NOM='Pain complet'           AND a.ALLERGENE_NOM IN ('Gluten'))
+   OR (r.RECETTE_NOM='Baguette tradition'     AND a.ALLERGENE_NOM IN ('Gluten'))
+   OR (r.RECETTE_NOM='Pain aux noix'          AND a.ALLERGENE_NOM IN ('Gluten','Fruits à coque'))
+   OR (r.RECETTE_NOM='Focaccia aux olives'    AND a.ALLERGENE_NOM IN ('Gluten','Sulfites'));
+
+/*==============================================================*/
+/* PRODUIT  (recette referencee par nom ; nb_parts + prix)      */
+/* Prix issus des tableaux du sujet pour gateaux/viennoiseries. */
+/*==============================================================*/
+INSERT INTO PRODUIT (RECETTE_ID, NB_PARTS, PRIX)
+SELECT r.RECETTE_ID, v.nb_parts, v.prix
+FROM RECETTE r
+JOIN (VALUES
+  ('Fraisier',                6,   30.00),
+  ('Fraisier',                8,   44.00),
+  ('Fraisier',               12,   55.00),
+  ('Fraisier',               60,  320.00),
+  ('Opéra',                   6,   40.00),
+  ('Opéra',                   8,   54.00),
+  ('Opéra',                  12,   75.00),
+  ('Opéra',                  60,  460.00),
+  ('Royal chocolat',          6,   45.00),
+  ('Royal chocolat',          8,   65.00),
+  ('Royal chocolat',         12,   80.00),
+  ('Royal chocolat',         60,  480.00),
+  ('Tarte aux fruits',        6,   20.00),
+  ('Tarte aux fruits',        8,   28.00),
+  ('Tarte aux fruits',       12,   36.00),
+  ('Tarte aux fruits',       60,  220.00),
+  ('Entremets personnalisé',  6,   35.00),
+  ('Entremets personnalisé',  8,   48.00),
+  ('Entremets personnalisé', 12,   60.00),
+  ('Croissant',               1,    1.20),
+  ('Croissant',              10,   10.00),
+  ('Croissant',              50,   40.00),
+  ('Pain au chocolat',        1,    1.70),
+  ('Pain au chocolat',       10,   15.00),
+  ('Pain au chocolat',       50,   70.00),
+  ('Chausson aux pommes',     1,    1.80),
+  ('Chausson aux pommes',    10,   17.00),
+  ('Chausson aux pommes',    50,   80.00),
+  ('Brioche tressée',         1,    8.00),
+  ('Mini-viennoiseries',     12,   11.00),
+  ('Mini-viennoiseries',     24,   20.00),
+  ('Pain de campagne',        1,    3.50),
+  ('Pain complet',            1,    3.20),
+  ('Baguette tradition',      1,    1.30),
+  ('Pain aux noix',           1,    4.00),
+  ('Focaccia aux olives',     1,    5.00)
+) AS v(nom, nb_parts, prix) ON v.nom = r.RECETTE_NOM;
+
+/*==============================================================*/
+/* CLIENT                                                       */
+/*==============================================================*/
+INSERT INTO CLIENT (NOM, PRENOM, TELEPHONE, MAIL) VALUES
+  ('Dupont',  'Marie',  '0612345678', 'marie.dupont@gmail.com'),
+  ('Martin',  'Pierre', '0623456789', 'pierre.martin@orange.fr'),
+  ('Bernard', 'Sophie', '0634567890', 'sophie.bernard@hotmail.com'),
+  ('Petit',   'Luc',    '0645678901', 'luc.petit@gmail.com'),
+  ('Durand',  'Emma',   '0656789012', 'emma.durand@free.fr'),
+  ('Leroy',   'Thomas', '0667890123', 'thomas.leroy@gmail.com');
+
+/*==============================================================*/
+/* UTILISATEUR (login -> role)                                  */
+/*==============================================================*/
+INSERT INTO UTILISATEUR (LOGIN, ROLE) VALUES
+  ('vendeur',   'VENDEUR'),
+  ('patissier', 'PATISSIER');
+
+/*==============================================================*/
+/* COMMANDE  (id explicites pour reference par LIGNE_COMMANDE)  */
+/* acompte = total / 4 (quart du prix, cf. sujet)               */
+/*==============================================================*/
+INSERT INTO COMMANDE (COMMANDE_ID, CATEGORIE_EVENEMENT_ID, CLIENT_ID, DATE_CREATION, DATE_RETRAIT, ACOMPTE, EST_PRETE, EST_RECUPEREE, TOTAL, DATE_EVENEMENT, NB_PERSONNE) VALUES
+  (1, (SELECT CATEGORIE_EVENEMENT_ID FROM CATEGORIE_EVENEMENT WHERE CATEGORIE_EVENEMENT_NOM='Anniversaire'),
+      (SELECT CLIENT_ID FROM CLIENT WHERE TELEPHONE='0612345678'),
+      DATE '2026-06-01', DATE '2026-06-04', 26.95, true,  false, 107.80, DATE '2026-06-05', 12),
+  (2, (SELECT CATEGORIE_EVENEMENT_ID FROM CATEGORIE_EVENEMENT WHERE CATEGORIE_EVENEMENT_NOM='Réunion'),
+      (SELECT CLIENT_ID FROM CLIENT WHERE TELEPHONE='0623456789'),
+      DATE '2026-06-02', DATE '2026-06-04', 13.75, false, false, 55.00,  NULL, 6),
+  (3, (SELECT CATEGORIE_EVENEMENT_ID FROM CATEGORIE_EVENEMENT WHERE CATEGORIE_EVENEMENT_NOM='Mariage'),
+      (SELECT CLIENT_ID FROM CLIENT WHERE TELEPHONE='0634567890'),
+      DATE '2026-06-03', DATE '2026-06-10', 95.00, false, false, 380.00, DATE '2026-06-12', 60),
+  (4, (SELECT CATEGORIE_EVENEMENT_ID FROM CATEGORIE_EVENEMENT WHERE CATEGORIE_EVENEMENT_NOM='Naissance'),
+      (SELECT CLIENT_ID FROM CLIENT WHERE TELEPHONE='0645678901'),
+      DATE '2026-05-28', DATE '2026-06-02', 13.50, true,  true,  54.00,  NULL, 8);
+
+/* Resynchroniser la sequence des COMMANDE apres insertion d'ids explicites */
+SELECT setval('commande_commande_id_seq', (SELECT MAX(COMMANDE_ID) FROM COMMANDE));
+
+/*==============================================================*/
+/* LIGNE_COMMANDE  (produit reference par recette + nb_parts)   */
+/*==============================================================*/
+/* Commande 1 : Royal chocolat 12 (80) x1 + Croissant lot 10 (10) x2 + Baguette (1.30) x6 = 107.80 */
+INSERT INTO LIGNE_COMMANDE (COMMANDE_ID, PRODUIT_ID, QUANTITE, EST_DECOUPE) VALUES
+  (1, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Royal chocolat'     AND p.NB_PARTS=12), 1, true),
+  (1, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Croissant'          AND p.NB_PARTS=10), 2, false),
+  (1, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Baguette tradition' AND p.NB_PARTS=1),  6, false);
+
+/* Commande 2 : Tarte aux fruits 6 (20) x2 + Pain au chocolat lot 10 (15) x1 = 55.00 */
+INSERT INTO LIGNE_COMMANDE (COMMANDE_ID, PRODUIT_ID, QUANTITE, EST_DECOUPE) VALUES
+  (2, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Tarte aux fruits' AND p.NB_PARTS=6),  2, false),
+  (2, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Pain au chocolat' AND p.NB_PARTS=10), 1, false);
+
+/* Commande 3 : Fraisier 60 (320) x1 + Mini-viennoiseries 24 (20) x2 + Focaccia (5) x4 = 380.00 */
+INSERT INTO LIGNE_COMMANDE (COMMANDE_ID, PRODUIT_ID, QUANTITE, EST_DECOUPE) VALUES
+  (3, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Fraisier'            AND p.NB_PARTS=60), 1, false),
+  (3, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Mini-viennoiseries'  AND p.NB_PARTS=24), 2, false),
+  (3, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Focaccia aux olives' AND p.NB_PARTS=1),  4, false);
+
+/* Commande 4 : Opera 8 (54) x1 = 54.00 (deja recuperee) */
+INSERT INTO LIGNE_COMMANDE (COMMANDE_ID, PRODUIT_ID, QUANTITE, EST_DECOUPE) VALUES
+  (4, (SELECT p.PRODUIT_ID FROM PRODUIT p JOIN RECETTE r ON p.RECETTE_ID=r.RECETTE_ID WHERE r.RECETTE_NOM='Opéra' AND p.NB_PARTS=8), 1, false);
