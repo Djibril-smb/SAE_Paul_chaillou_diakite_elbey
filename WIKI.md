@@ -201,7 +201,8 @@ pour pouvoir le ré-utiliser à chaque appel à la base.
 
 | Classe | Rôle | Méthodes implémentées |
 |--------|------|-----------------------|
-| `Client` | un client | `Lister()`, `Rechercher(texte)`, `Enregistrer()` |
+| `Client` | un client | `Lister()`, `Rechercher(texte)`, `Enregistrer()`, `Supprimer()` |
+| `Commande` | en-tête de commande + lignes en mémoire | `ListerParClient(clientId)` |
 | `Utilisateur` | un compte applicatif | `Trouver(login)` |
 | `Categorie` | catégorie de recette | propriétés seules |
 | `CategorieEvenement` | type d'événement | propriétés seules |
@@ -209,7 +210,6 @@ pour pouvoir le ré-utiliser à chaque appel à la base.
 | `Recette` | une recette nommée | propriétés seules |
 | `Produit` | recette + nb parts + prix | propriétés seules |
 | `LigneCommande` | une ligne d'une commande | propriétés seules |
-| `Commande` | en-tête de commande + lignes en mémoire | propriétés seules |
 
 > Les classes « propriétés seules » recevront leurs méthodes BD au fur et à mesure
 > qu'on implémente les fonctionnalités Produits / Commandes.
@@ -482,6 +482,115 @@ private void TxtRecherche_TextChanged(object sender, TextChangedEventArgs e)
 - Pas besoin d'`INotifyPropertyChanged` ici : on remplace toute la liste à
   chaque rafraîchissement, le DataGrid se met à jour tout seul.
 
+### Supprimer un client (`Client.Supprimer`)
+
+```csharp
+public void Supprimer()
+{
+    using (NpgsqlConnection cn = Connexion.Ouvrir())
+    {
+        string sql = "DELETE FROM CLIENT WHERE CLIENT_ID = @id";
+        using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
+        {
+            cmd.Parameters.AddWithValue("id", clientId);
+            cmd.ExecuteNonQuery();
+        }
+    }
+}
+```
+
+- `ExecuteNonQuery` : à utiliser pour INSERT / UPDATE / DELETE sans valeur de retour.
+- **Garde-fou en base** : la clé étrangère `COMMANDE.CLIENT_ID` est en
+  `on delete restrict`. Si le client a au moins une commande, PostgreSQL refuse
+  le DELETE et lève une `PostgresException` de code **`23503`** (violation de clé
+  étrangère). Côté UI on capte ça pour afficher un message clair :
+  > « Impossible de supprimer ce client car il a déjà des commandes. »
+
+### Voir les commandes d'un client (`Commande.ListerParClient`)
+
+```csharp
+string sql = "SELECT C.COMMANDE_ID, ..., E.CATEGORIE_EVENEMENT_NOM "
+           + "FROM COMMANDE C "
+           + "LEFT JOIN CATEGORIE_EVENEMENT E "
+           + "       ON E.CATEGORIE_EVENEMENT_ID = C.CATEGORIE_EVENEMENT_ID "
+           + "WHERE C.CLIENT_ID = @clientId "
+           + "ORDER BY C.DATE_CREATION DESC";
+```
+
+- **`LEFT JOIN`** : on ramène le nom de l'événement, mais on **garde** les
+  commandes qui n'en ont pas (`CATEGORIE_EVENEMENT_ID` nullable). Un `INNER JOIN`
+  les aurait filtrées.
+- Le résultat est trié des commandes les plus récentes aux plus anciennes.
+
+**Propriété transitoire** : `Commande.CategorieEvenementNom` n'existe pas dans
+la table `COMMANDE`. C'est une propriété C# remplie par le `JOIN`, utile pour
+l'affichage uniquement. Elle est `null` quand la commande n'a pas d'événement.
+
+### UI — interactions sur la liste
+
+| Action | Effet |
+|--------|-------|
+| Saisie dans la recherche | Filtre la liste à la volée (`TextChanged`) |
+| Sélectionner une ligne + cliquer « Supprimer » | Confirmation, puis `Supprimer()` |
+| **Double-clic sur une ligne** | Ouvre `FenetreCommandesClient` (modale) |
+| « + Nouveau client » | Ouvre `FenetreFicheClient` (modale) |
+
+Le double-clic utilise l'événement `MouseDoubleClick` du `DataGrid` :
+```csharp
+private void GrilleClients_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+{
+    Client? selectionne = GrilleClients.SelectedItem as Client;
+    if (selectionne == null) return;     // garde : on a peut-etre clique sur l'entete
+
+    FenetreCommandesClient fenetre = new FenetreCommandesClient(selectionne);
+    fenetre.Owner = Window.GetWindow(this);
+    fenetre.ShowDialog();
+}
+```
+
+- `as Client` : cast **sûr** — renvoie `null` si l'élément n'est pas un `Client`.
+- `Window.GetWindow(this)` : récupère la fenêtre qui contient ce UserControl
+  (la `MainWindow`). On la passe en `Owner` pour que le pop-up s'ouvre centré
+  dessus et reste lié à elle.
+
+### UI — historique des commandes (`FenetreCommandesClient`)
+
+Fenêtre modale qui reçoit un `Client` en paramètre du constructeur, charge ses
+commandes et les affiche dans un `DataGrid`. Si la liste est vide, on cache la
+grille et on affiche « Aucune commande pour ce client. »
+
+```csharp
+public FenetreCommandesClient(Client client)
+{
+    InitializeComponent();
+    string prenom = client.Prenom ?? "";
+    LblTitre.Text = "Commandes de " + (prenom + " " + client.Nom).Trim();
+
+    List<Commande> commandes = Commande.ListerParClient(client.ClientId);
+    GrilleCommandes.ItemsSource = commandes;
+
+    if (commandes.Count == 0)
+    {
+        GrilleCommandes.Visibility = Visibility.Collapsed;
+        LblVide.Visibility = Visibility.Visible;
+    }
+}
+```
+
+Formatage des colonnes du DataGrid via `StringFormat` :
+```xml
+<DataGridTextColumn Header="Total"
+    Binding="{Binding Total, StringFormat=\{0:0.00\} €}" Width="80"/>
+<DataGridTextColumn Header="Créée le"
+    Binding="{Binding DateCreation, StringFormat=\{0:dd/MM/yyyy\}}" Width="*"/>
+<DataGridCheckBoxColumn Header="Prête" Binding="{Binding EstPrete}" Width="60"/>
+```
+
+- `{0:0.00}` = format décimal avec 2 chiffres après la virgule.
+- `{0:dd/MM/yyyy}` = format de date français.
+- `DataGridCheckBoxColumn` = colonne avec case à cocher (booléens) ; en lecture
+  seule car la grille a `IsReadOnly="True"`.
+
 ### UI — création (`FenetreFicheClient.xaml.cs`)
 
 Une **Window modale** ouverte avec `ShowDialog()`. Validation en 5 temps :
@@ -524,6 +633,8 @@ if (!Regex.IsMatch(telephone, MotifTelephone)) { /* erreur */ }
 | Ajouter un bouton sur l'accueil vendeur | `uc/ucPageAccueilVendeur.xaml` (+ Click dans `.cs`) |
 | Ajouter une colonne dans la liste clients | `uc/ucListeClients.xaml` (DataGrid.Columns) |
 | Changer les règles de validation client | `uc/FenetreFicheClient.xaml.cs` |
+| Modifier l'affichage des commandes d'un client | `uc/FenetreCommandesClient.xaml` |
+| Modifier la requête « commandes d'un client » | `Metier/Commande.cs` (`ListerParClient`) |
 | Naviguer vers un nouvel écran | depuis n'importe quel `.cs` : `((MainWindow)Application.Current.MainWindow).Naviguer(new ...)` |
 | Modifier le jeu d'essais BD | `bd/03_jeu_essais.sql` |
 | Ajouter / modifier une table | `bd/01_crebas.sql` (rejouer tout) |

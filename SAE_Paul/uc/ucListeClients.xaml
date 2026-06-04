@@ -23,10 +23,11 @@
                        Foreground="#231F20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
 
-        <!-- Ligne 1 : barre de recherche + bouton nouveau -->
+        <!-- Ligne 1 : barre de recherche + boutons Supprimer / Nouveau -->
         <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
@@ -36,7 +37,19 @@
                          TextChanged="TxtRecherche_TextChanged"/>
             </Border>
 
-            <Button x:Name="BtnNouveau" Grid.Column="1" Content="+ Nouveau client"
+            <Button x:Name="BtnSupprimer" Grid.Column="1" Content="Supprimer"
+                    Height="40" Width="120" Foreground="White" FontSize="14" Cursor="Hand"
+                    Margin="0,0,10,0" Click="BtnSupprimer_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#B33A3A" CornerRadius="20">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <Button x:Name="BtnNouveau" Grid.Column="2" Content="+ Nouveau client"
                     Height="40" Width="160" Foreground="White" FontSize="14" Cursor="Hand"
                     Click="BtnNouveau_Click">
                 <Button.Template>
@@ -49,12 +62,14 @@
             </Button>
         </Grid>
 
-        <!-- Ligne 2 : tableau des clients -->
+        <!-- Ligne 2 : tableau des clients (double-clic = voir ses commandes) -->
         <DataGrid x:Name="GrilleClients" Grid.Row="2"
                   AutoGenerateColumns="False" IsReadOnly="True"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                   Background="White" RowBackground="White" AlternatingRowBackground="#F3EDE3"
-                  BorderBrush="#231F20" BorderThickness="1" FontSize="14">
+                  BorderBrush="#231F20" BorderThickness="1" FontSize="14"
+                  SelectionMode="Single"
+                  MouseDoubleClick="GrilleClients_MouseDoubleClick">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*"/>
                 <DataGridTextColumn Header="Prénom" Binding="{Binding Prenom}" Width="*"/>

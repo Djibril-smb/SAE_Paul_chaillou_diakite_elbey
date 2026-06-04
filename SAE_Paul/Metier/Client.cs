@@ -126,6 +126,25 @@ namespace SAE_Paul.Metier
         }
 
         /// <summary>
+        /// Supprime le client courant de la base.
+        /// Si le client a des commandes, la BD refuse (FK on delete restrict)
+        /// et on remonte une PostgresException de code 23503.
+        /// </summary>
+        public void Supprimer()
+        {
+            using (NpgsqlConnection cn = Connexion.Ouvrir())
+            {
+                string sql = "DELETE FROM CLIENT WHERE CLIENT_ID = @id";
+
+                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
+                {
+                    cmd.Parameters.AddWithValue("id", clientId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        /// <summary>
         /// Fabrique un objet Client a partir de la ligne courante du lecteur.
         /// </summary>
         private static Client LireDepuis(NpgsqlDataReader lecteur)
