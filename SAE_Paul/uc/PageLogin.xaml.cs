@@ -21,7 +21,7 @@ namespace SAE_Paul
         private void BtnConnexion_Click(object sender, RoutedEventArgs e)
         {
             string identifiant = TxtIdentifiant.Text.Trim();
-            string motDePasse = TxtMotDePasse.Text;
+            string motDePasse = TxtMotDePasse.Password;
 
             if (identifiant == "" || motDePasse == "")
             {
