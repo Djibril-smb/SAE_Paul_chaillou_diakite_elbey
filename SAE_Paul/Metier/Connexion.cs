@@ -16,6 +16,18 @@ namespace SAE_Paul.Metier
             _motDePasse = motDePasse;
         }
 
+        // Role de l'utilisateur courant (VENDEUR ou PATISSIER), defini au login.
+        // Sert a router le bouton "retour" des ecrans partages (ex. Produits).
+        private static string? _role;
+        public static string? Role
+        {
+            get => _role;
+        }
+        public static void DefinirRole(string role)
+        {
+            _role = role;
+        }
+
         public static NpgsqlConnection Ouvrir()
         {
             string chaine =

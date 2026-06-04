@@ -13,6 +13,13 @@ namespace SAE_Paul.uc
         // Email simple : au moins un caractere, puis @, puis un domaine, puis . puis une extension.
         private const string MotifMail = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
 
+        // Client effectivement cree (null si annulation). Recuperable apres ShowDialog().
+        private Client? clientCree;
+        public Client? ClientCree
+        {
+            get => clientCree;
+        }
+
         public FenetreFicheClient()
         {
             InitializeComponent();
@@ -74,6 +81,7 @@ namespace SAE_Paul.uc
                 return;
             }
 
+            clientCree = client;
             DialogResult = true;
             Close();
         }

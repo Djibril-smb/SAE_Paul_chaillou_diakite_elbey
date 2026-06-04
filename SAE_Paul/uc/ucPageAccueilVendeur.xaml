@@ -40,7 +40,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Button x:Name="BtnProduits" Grid.Column="0" Margin="15,0" >
+            <Button x:Name="BtnProduits" Grid.Column="0" Margin="15,0" Click="BtnProduits_Click" >
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="#231F20" CornerRadius="25">
@@ -54,7 +54,7 @@
                 </Button.Template>
             </Button>
 
-            <Button x:Name="BtnCommandes" Grid.Column="1" Margin="15,0" >
+            <Button x:Name="BtnCommandes" Grid.Column="1" Margin="15,0" Click="BtnCommandes_Click" >
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="#231F20" CornerRadius="25">

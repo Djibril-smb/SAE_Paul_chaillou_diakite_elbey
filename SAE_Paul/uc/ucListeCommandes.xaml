@@ -1,0 +1,127 @@
+<UserControl x:Class="SAE_Paul.uc.ucListeCommandes"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SAE_Paul.uc"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#FAF4EB">
+    <UserControl.Resources>
+        <!-- Style des boutons filtres : pill noir si actif (Tag=ON), pill creme sinon. -->
+        <Style x:Key="StyleFiltre" TargetType="Button">
+            <Setter Property="Foreground" Value="#231F20"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Padding" Value="20,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fond" Background="#F3EDE3" BorderBrush="#231F20"
+                                BorderThickness="1.5" CornerRadius="19">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="ON">
+                                <Setter TargetName="Fond" Property="Background" Value="#231F20"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Fond" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Ligne 0 : retour + titre -->
+        <Grid Grid.Row="0" Margin="0,0,0,18">
+            <Button x:Name="BtnRetour" Content="←" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    FontSize="28" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                    Click="BtnRetour_Click"/>
+            <TextBlock Text="Commandes" FontFamily="Georgia" FontSize="28" FontWeight="Bold"
+                       Foreground="#231F20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- Ligne 1 : filtres + bouton nouvelle -->
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button x:Name="BtnFiltreEnCours" Content="À préparer" Tag="ON"
+                        Style="{StaticResource StyleFiltre}" Click="BtnFiltre_Click"/>
+                <Button x:Name="BtnFiltreRecuperees" Content="Récupérées"
+                        Style="{StaticResource StyleFiltre}" Click="BtnFiltre_Click"/>
+                <Button x:Name="BtnFiltreToutes" Content="Toutes"
+                        Style="{StaticResource StyleFiltre}" Click="BtnFiltre_Click"/>
+                <Button x:Name="BtnFiltreDuJour" Content="Du jour"
+                        Style="{StaticResource StyleFiltre}" Click="BtnFiltre_Click"/>
+            </StackPanel>
+
+            <Button x:Name="BtnNouvelle" Content="+ Nouvelle commande"
+                    HorizontalAlignment="Right" Height="40" Width="200" Foreground="White"
+                    FontSize="14" Cursor="Hand" Click="BtnNouvelle_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#231F20" CornerRadius="20">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- Ligne 2 : tableau (double-clic = details) -->
+        <DataGrid x:Name="GrilleCommandes" Grid.Row="2"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                  Background="White" RowBackground="White" AlternatingRowBackground="#F3EDE3"
+                  BorderBrush="#231F20" BorderThickness="1" FontSize="13"
+                  SelectionMode="Single"
+                  MouseDoubleClick="GrilleCommandes_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="N°" Binding="{Binding CommandeId}" Width="50"/>
+                <DataGridTextColumn Header="Client" Binding="{Binding ClientNomComplet}" Width="*"/>
+                <DataGridTextColumn Header="Retrait"
+                                    Binding="{Binding DateRetrait, StringFormat=\{0:dd/MM/yyyy\}}" Width="*"/>
+                <DataGridTextColumn Header="Événement" Binding="{Binding CategorieEvenementNom}" Width="*"/>
+                <DataGridTextColumn Header="Pers." Binding="{Binding NbPersonne}" Width="60"/>
+                <DataGridTextColumn Header="Total"
+                                    Binding="{Binding Total, StringFormat=\{0:0.00\} €}" Width="80"/>
+                <DataGridTextColumn Header="Acompte"
+                                    Binding="{Binding Acompte, StringFormat=\{0:0.00\} €}" Width="80"/>
+                <DataGridCheckBoxColumn Header="Prête" Binding="{Binding EstPrete}" Width="60"/>
+                <DataGridCheckBoxColumn Header="Récup." Binding="{Binding EstRecuperee}" Width="60"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock x:Name="LblVide" Grid.Row="2" Text="Aucune commande à afficher."
+                   FontFamily="Georgia" FontSize="14" Foreground="#666"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="Collapsed"/>
+
+        <!-- Ligne 3 : action -->
+        <Button x:Name="BtnRecuperee" Grid.Row="3" Content="Marquer récupérée"
+                HorizontalAlignment="Right" Height="40" Width="200" Margin="0,15,0,0"
+                Foreground="White" FontSize="14" Cursor="Hand" Click="BtnRecuperee_Click">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="#3A7D3A" CornerRadius="20">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </Grid>
+</UserControl>

@@ -18,6 +18,16 @@ namespace SAE_Paul.uc
             ((MainWindow)Application.Current.MainWindow).Naviguer(new ucListeClients());
         }
 
+        private void BtnCommandes_Click(object sender, RoutedEventArgs e)
+        {
+            ((MainWindow)Application.Current.MainWindow).Naviguer(new ucListeCommandes());
+        }
+
+        private void BtnProduits_Click(object sender, RoutedEventArgs e)
+        {
+            ((MainWindow)Application.Current.MainWindow).Naviguer(new ucListeProduits());
+        }
+
         private void BtnProfil_Click(object sender, RoutedEventArgs e)
         {
             // Deconnexion : retour a l'ecran de login.

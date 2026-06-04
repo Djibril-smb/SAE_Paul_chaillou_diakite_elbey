@@ -1,0 +1,148 @@
+<UserControl x:Class="SAE_Paul.uc.ucListeProduits"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SAE_Paul.uc"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#FAF4EB">
+    <UserControl.Resources>
+        <Style x:Key="StylePill" TargetType="Button">
+            <Setter Property="Foreground" Value="#231F20"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fond" Background="#F3EDE3" BorderBrush="#231F20"
+                                BorderThickness="1.5" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="ON">
+                                <Setter TargetName="Fond" Property="Background" Value="#231F20"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="25">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <Button x:Name="BtnRetour" Content="←" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    FontSize="28" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                    Click="BtnRetour_Click"/>
+            <TextBlock Text="Produits" FontFamily="Georgia" FontSize="28" FontWeight="Bold"
+                       Foreground="#231F20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button x:Name="BtnCatTout" Content="Tout" Tag="ON"
+                        Style="{StaticResource StylePill}" Click="BtnCategorie_Click"/>
+                <Button x:Name="BtnCatGateaux" Content="Gâteaux"
+                        Style="{StaticResource StylePill}" Click="BtnCategorie_Click"/>
+                <Button x:Name="BtnCatViennoiseries" Content="Viennoiseries"
+                        Style="{StaticResource StylePill}" Click="BtnCategorie_Click"/>
+                <Button x:Name="BtnCatPains" Content="Pains"
+                        Style="{StaticResource StylePill}" Click="BtnCategorie_Click"/>
+            </StackPanel>
+
+            <Button x:Name="BtnNouvelle" Content="+ Nouvelle recette"
+                    HorizontalAlignment="Right" Height="38" Width="180"
+                    Foreground="White" FontSize="13" Cursor="Hand" Click="BtnNouvelle_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#231F20" CornerRadius="19">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#D4D4D4" CornerRadius="15" Height="36" Margin="0,0,0,12">
+            <TextBox x:Name="TxtRecherche" Background="Transparent" BorderThickness="0"
+                     VerticalAlignment="Center" Padding="14,0" FontSize="13"
+                     TextChanged="TxtRecherche_TextChanged"/>
+        </Border>
+
+        <TextBlock Grid.Row="3" Text="Cliquez sur une recette pour la modifier."
+                   FontStyle="Italic" Foreground="#666" Margin="0,0,0,8" FontSize="12"/>
+
+        <Border Grid.Row="4" Background="#FFFDF7" BorderBrush="#231F20" BorderThickness="1" CornerRadius="12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <ItemsControl x:Name="ListeRecettes">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="170" Height="200" Margin="6" Cursor="Hand"
+                                    Click="CarteRecette_Click"
+                                    Background="Transparent" BorderThickness="0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Fond" Background="#F3EDE3"
+                                                BorderBrush="#231F20" BorderThickness="1.5"
+                                                CornerRadius="14">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="6" ShadowDepth="2" Opacity="0.2"/>
+                                            </Border.Effect>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="110"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <!-- Zone image -->
+                                                <Border Grid.Row="0" Background="#231F20"
+                                                        CornerRadius="13,13,0,0" ClipToBounds="True">
+                                                    <Image Source="{Binding ImagePath}" Stretch="Uniform"/>
+                                                </Border>
+                                                <!-- Zone texte -->
+                                                <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="8">
+                                                    <TextBlock Text="{Binding RecetteNom}" Foreground="#231F20"
+                                                               FontSize="13" FontWeight="Bold" FontFamily="Georgia"
+                                                               TextWrapping="Wrap" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CategorieNom}" FontSize="10"
+                                                               Foreground="#666" HorizontalAlignment="Center"
+                                                               Margin="0,2,0,2"/>
+                                                    <TextBlock Text="{Binding LibellePrix}" Foreground="#231F20"
+                                                               FontSize="11" FontWeight="Bold"
+                                                               HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Fond" Property="BorderThickness" Value="2.5"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

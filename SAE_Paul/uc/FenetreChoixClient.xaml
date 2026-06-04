@@ -1,0 +1,82 @@
+<Window x:Class="SAE_Paul.uc.FenetreChoixClient"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        Title="Choisir un client" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#FAF4EB">
+    <Grid Margin="25">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Choisir un client"
+                   FontFamily="Georgia" FontSize="22" FontWeight="Bold"
+                   Foreground="#231F20" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+        <Border Grid.Row="1" Background="#D4D4D4" CornerRadius="15" Height="38" Margin="0,0,0,12">
+            <TextBox x:Name="TxtRecherche" Background="Transparent" BorderThickness="0"
+                     VerticalAlignment="Center" Padding="12,0" FontSize="14"
+                     TextChanged="TxtRecherche_TextChanged"/>
+        </Border>
+
+        <DataGrid x:Name="GrilleClients" Grid.Row="2"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                  Background="White" RowBackground="White" AlternatingRowBackground="#F3EDE3"
+                  BorderBrush="#231F20" BorderThickness="1" FontSize="13"
+                  SelectionMode="Single"
+                  MouseDoubleClick="GrilleClients_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*"/>
+                <DataGridTextColumn Header="Prénom" Binding="{Binding Prenom}" Width="*"/>
+                <DataGridTextColumn Header="Téléphone" Binding="{Binding Telephone}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock x:Name="LblAucun" Grid.Row="3"
+                   Text="Aucun client ne correspond. Vous pouvez en créer un nouveau."
+                   FontStyle="Italic" Foreground="#666"
+                   HorizontalAlignment="Center" Margin="0,10,0,0"
+                   Visibility="Collapsed"/>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button x:Name="BtnAnnuler" Content="Annuler" Width="110" Height="38" Margin="0,0,10,0"
+                    Cursor="Hand" Click="BtnAnnuler_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#9B9B9B" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button x:Name="BtnCreer" Content="+ Créer ce client" Width="160" Height="38"
+                    Foreground="White" Cursor="Hand" Click="BtnCreer_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#231F20" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button x:Name="BtnChoisir" Content="Choisir" Width="110" Height="38" Margin="10,0,0,0"
+                    Foreground="White" Cursor="Hand" Click="BtnChoisir_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#3A7D3A" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

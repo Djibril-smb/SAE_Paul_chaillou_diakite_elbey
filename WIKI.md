@@ -202,14 +202,14 @@ pour pouvoir le ré-utiliser à chaque appel à la base.
 | Classe | Rôle | Méthodes implémentées |
 |--------|------|-----------------------|
 | `Client` | un client | `Lister()`, `Rechercher(texte)`, `Enregistrer()`, `Supprimer()` |
-| `Commande` | en-tête de commande + lignes en mémoire | `ListerParClient(clientId)` |
+| `Commande` | en-tête de commande + lignes en mémoire | `Lister()`, `ListerEnCours()`, `ListerRecuperees()`, `ListerDuJour()`, `ListerAPreparer()` (chef), `ListerParClient(clientId)`, `Enregistrer()` (transaction), `MarquerPrete()`, `MarquerRecuperee()` |
+| `LigneCommande` | une ligne d'une commande | `ListerParCommande(commandeId)` + propriétés transitoires `Libelle`, `PrixUnitaire`, `SousTotal` (pour la fenêtre de détail) |
+| `Produit` | recette + nb parts + prix | `Lister()`, `ListerParRecette(recetteId)`, `Enregistrer()`, `Supprimer()`, `BasculerDisponibilite()` + propriété `Libelle` |
+| `Recette` | une recette nommée | `Lister()` (avec catégorie + prix min/max + nb tailles), `Enregistrer()` (INSERT/UPDATE), `Supprimer()`, `ListerMesAllergenes()`, `MettreAJourAllergenes(ids)` |
+| `Categorie` | catégorie de recette | `Lister()` |
+| `Allergene` | un allergène | `Lister()` |
+| `CategorieEvenement` | type d'événement | `Lister()` |
 | `Utilisateur` | un compte applicatif | `Trouver(login)` |
-| `Categorie` | catégorie de recette | propriétés seules |
-| `CategorieEvenement` | type d'événement | propriétés seules |
-| `Allergene` | un allergène | propriétés seules |
-| `Recette` | une recette nommée | propriétés seules |
-| `Produit` | recette + nb parts + prix | propriétés seules |
-| `LigneCommande` | une ligne d'une commande | propriétés seules |
 
 > Les classes « propriétés seules » recevront leurs méthodes BD au fur et à mesure
 > qu'on implémente les fonctionnalités Produits / Commandes.
@@ -622,7 +622,489 @@ if (!Regex.IsMatch(telephone, MotifTelephone)) { /* erreur */ }
 
 ---
 
-## 9. Où trouver quoi (index)
+## 9. Fonctionnalité Commandes
+
+C'est la fonctionnalité centrale du sujet. Elle réutilise tout ce qu'on a vu sur
+Clients en y ajoutant : une **transaction** (commande + lignes = tout ou rien),
+des **JOIN** pour l'affichage et un calcul d'**acompte automatique**.
+
+### Écrans
+
+| Écran | Rôle |
+|-------|------|
+| `ucListeCommandes` (vendeur) | Liste avec 4 filtres ; « + Nouvelle commande » ; « Marquer récupérée » (impossible tant que pas prête) ; **double-clic = détail** |
+| `ucListeCommandesChef` (pâtissier) | Liste « À préparer » par défaut ; « Marquer prête » ; **double-clic = détail** |
+| `ucNouvelleCommande` | Formulaire de création : client, événement (type + nb personnes), date retrait, **sélection produits en cartes** (filtres catégorie + recherche), récap, totaux auto |
+| `FenetreChoixClient` | Pop-up de sélection d'un client (recherche, double-clic, ou « + Créer ce client ») |
+| `FenetreChoixTailleProduit` | Pop-up qui s'ouvre au clic sur une carte recette : choix de la taille + quantité |
+| `FenetreDetailCommande` | Détail d'une commande : statut, infos, lignes, boutons « Marquer prête » / « Marquer récupérée » selon le workflow |
+
+### Filtres de la liste (`ucListeCommandes`)
+
+4 boutons en haut, l'actif est en noir, les autres en gris. Au clic sur un
+bouton, son `Tag` passe à `"ON"` et le précédent à `null` — le `Style.Trigger`
+du XAML change alors la couleur de fond automatiquement (pas besoin de toucher
+au XAML depuis le code).
+
+```csharp
+private void BtnFiltre_Click(object sender, RoutedEventArgs e)
+{
+    filtreActif.Tag = null;
+    filtreActif = (Button)sender;
+    filtreActif.Tag = "ON";
+    Rafraichir();
+}
+```
+
+Côté SQL, on a **un seul SELECT** dans `Commande.ListerAvecFiltre(...)` ;
+chaque méthode publique passe juste sa clause `WHERE ... ORDER BY ...` :
+
+```csharp
+public static List<Commande> ListerEnCours()
+{
+    return ListerAvecFiltre("WHERE C.EST_RECUPEREE = FALSE "
+                          + "ORDER BY C.DATE_RETRAIT, CL.NOM");
+}
+```
+
+→ Avantage : la requête (les JOIN, les colonnes) n'existe qu'à **un seul
+endroit** ; si on ajoute demain une colonne, on la rajoute une fois.
+
+### Liste du jour (`Commande.ListerDuJour`)
+
+```csharp
+string sql = "SELECT C.*, E.CATEGORIE_EVENEMENT_NOM, "
+           + "       CL.NOM AS CLIENT_NOM, CL.PRENOM AS CLIENT_PRENOM "
+           + "FROM COMMANDE C "
+           + "JOIN CLIENT CL ON CL.CLIENT_ID = C.CLIENT_ID "
+           + "LEFT JOIN CATEGORIE_EVENEMENT E "
+           + "       ON E.CATEGORIE_EVENEMENT_ID = C.CATEGORIE_EVENEMENT_ID "
+           + "WHERE C.DATE_RETRAIT = CURRENT_DATE "
+           + "ORDER BY C.EST_RECUPEREE, CL.NOM, CL.PRENOM";
+```
+
+- **`CURRENT_DATE`** : fonction PostgreSQL qui retourne la date du jour (pas de
+  paramètre à passer côté C#).
+- **`JOIN CLIENT`** (sans LEFT) : tout commande a un client (`CLIENT_ID NOT NULL`).
+- **`LEFT JOIN CATEGORIE_EVENEMENT`** : la catégorie d'événement est facultative.
+- **`AS CLIENT_NOM`** : on renomme la colonne `NOM` du client pour éviter une
+  collision si on JOINait avec une autre table ayant aussi `NOM`.
+
+### Refactor `LireBase`
+
+Avant on avait `LireDepuis` couplé à la requête « commandes par client » (avec
+`CATEGORIE_EVENEMENT_NOM` codé en dur). Maintenant : `LireBase` ne lit que les
+colonnes de la table `COMMANDE`, et chaque méthode (`ListerParClient`,
+`ListerDuJour`) lit ensuite ses **propres** colonnes de JOIN. C'est plus
+souple : si demain on ajoute `ListerNonRecuperees()`, on appelle `LireBase`
+puis on ajoute juste les colonnes spécifiques.
+
+### Enregistrement avec TRANSACTION (`Commande.Enregistrer`)
+
+C'est le morceau le plus important à comprendre pour l'éval.
+
+```csharp
+public void Enregistrer()
+{
+    using (NpgsqlConnection cn = Connexion.Ouvrir())
+    using (NpgsqlTransaction tx = cn.BeginTransaction())
+    {
+        try
+        {
+            // 1) INSERT de l'en-tete COMMANDE -> recupere l'id genere
+            using (NpgsqlCommand cmd = new NpgsqlCommand(sqlCmd, cn, tx))
+            {
+                ...
+                commandeId = (int)cmd.ExecuteScalar()!;
+            }
+
+            // 2) INSERT de chaque LIGNE_COMMANDE
+            foreach (LigneCommande ligne in lignes)
+            {
+                ligne.CommandeId = commandeId;
+                using (NpgsqlCommand cmd = new NpgsqlCommand(sqlLn, cn, tx))
+                {
+                    ...
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            tx.Commit();          // tout est OK : on valide
+        }
+        catch
+        {
+            tx.Rollback();        // au moindre probleme : on annule TOUT
+            throw;
+        }
+    }
+}
+```
+
+**Pourquoi une transaction ?** Si le 1er INSERT (l'en-tête) réussit mais qu'un
+INSERT de ligne plante, **sans transaction** on aurait une commande en base
+**sans aucune ligne** — donnée incohérente. Avec `BeginTransaction()` :
+- soit on appelle `tx.Commit()` à la fin → tout est écrit en base ;
+- soit on appelle `tx.Rollback()` (notre `catch`) → **rien** n'est écrit.
+
+C'est le principe **« tout ou rien »** (atomicité, le « A » de **ACID**).
+
+**Important** : le `NpgsqlCommand` doit être créé avec la transaction
+(`new NpgsqlCommand(sql, cn, tx)`), sinon il n'en fait pas partie.
+
+### Marquer comme récupérée (`Commande.MarquerRecuperee`)
+
+```csharp
+string sql = "UPDATE COMMANDE SET EST_RECUPEREE = TRUE WHERE COMMANDE_ID = @id";
+```
+
+`ExecuteNonQuery()` (UPDATE qui ne retourne pas de valeur). On met aussi à jour
+le champ `estRecuperee` en mémoire pour ne pas avoir à recharger toute la liste.
+
+### Liste des produits (`Produit.Lister`)
+
+JOIN sur `RECETTE` puis sur `CATEGORIE` pour récupérer les noms (qui ne sont
+**pas** dans la table PRODUIT). Filtre `EST_INDISPONIBLE = FALSE`. Tri par
+catégorie, recette, nombre de parts.
+
+**Propriété `Libelle`** : calculée à partir des autres propriétés, jamais
+stockée. Utilisée par le `ComboBox` via `DisplayMemberPath="Libelle"`.
+
+```csharp
+public string Libelle
+{
+    get => (categorieNom ?? "") + " - " + (recetteNom ?? "") +
+           " (" + nbParts + " parts) - " + prix.ToString("0.00") + " €";
+}
+```
+
+### Formulaire de création (`ucNouvelleCommande`)
+
+Découpé en sections : Client → Événement (facultatif) → Date de retrait →
+Produits → Récapitulatif → Totaux → Valider.
+
+**Sélection des produits** : interface inspirée du Figma. En haut, **4 pilules
+de filtre** (Tout / Gâteaux / Viennoiseries / Pains) + champ de **recherche**.
+En dessous, une grille de **cartes** (`ItemsControl` + `WrapPanel`) où
+**chaque carte = une recette** (Fraisier, Croissant…) — pas une taille.
+
+Une carte affiche le nom de la recette, sa catégorie et la **fourchette de
+prix** (« de 30 € à 320 € » pour le Fraisier qui existe en 6/8/12/60 parts).
+**Click sur une carte** = ouverture d'une **pop-up `FenetreChoixTailleProduit`**
+qui propose les tailles disponibles + un champ Quantité. Validation = ajout
+au récapitulatif (cumul si le PRODUIT exact est déjà présent).
+
+> **Pourquoi grouper par recette ?** La table `PRODUIT` a un `UNIQUE(RECETTE_ID,
+> NB_PARTS)` : il y a **un PRODUIT par taille**, avec son prix figé par la
+> boulangerie (les prix ne sont pas linéaires : Fraisier 6 = 30 €, 8 = 44 €,
+> 12 = 55 €, 60 = 320 €). On garde donc le schéma tel quel, mais on **regroupe
+> à l'écran** côté UI via une petite classe d'affichage `RecetteCard` (`RecetteId`,
+> `RecetteNom`, `CategorieNom`, `List<Produit> Produits`, `PrixMin/Max`).
+
+```xml
+<ItemsControl x:Name="ListeProduits">
+    <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+        <DataTemplate>
+            <Button Click="CarteProduit_Click" ...>
+                ... binding RecetteNom / NbParts / Prix ...
+            </Button>
+        </DataTemplate>
+    </ItemsControl.ItemTemplate>
+</ItemsControl>
+```
+
+Côté code, on garde **toute la liste des produits en mémoire** (`tousLesProduits`)
+et `RafraichirCartes()` recalcule la liste affichée selon catégorie + recherche.
+
+> **Note** : on a retiré la « date de l'événement » du formulaire — seule la
+> date de retrait est utile en pratique. La colonne reste en base (au cas où),
+> mais le formulaire ne la remplit plus.
+
+### Fenêtre de détail (`FenetreDetailCommande`)
+
+Ouverte au **double-clic** sur une ligne, depuis le vendeur ou le pâtissier.
+Affiche :
+- titre + statut visuel (badges « Prête » et « Récupérée » qui passent du gris
+  au vert selon l'état) ;
+- client + événement + date retrait ;
+- DataGrid des **lignes de la commande** (chargées via `LigneCommande.ListerParCommande`) ;
+- totaux ;
+- **3 boutons** : « Marquer prête », « Marquer récupérée », « Fermer ».
+
+Les boutons « Marquer prête » / « Marquer récupérée » sont **activés selon le
+workflow** :
+- *Marquer prête* : actif si `!EstPrete && !EstRecuperee`.
+- *Marquer récupérée* : actif si `EstPrete && !EstRecuperee` — **on ne peut
+  pas marquer récupérée tant que le pâtissier n'a pas marqué prête**.
+
+Quand un bouton est désactivé, son fond passe gris via un `Trigger` sur
+`IsEnabled` dans le template du bouton.
+
+### Workflow d'une commande
+
+```
+   (création)              (pâtissier)             (vendeur)
+   ─────────────►  À PRÉPARER  ─────────────►  PRÊTE  ─────────────►  RÉCUPÉRÉE
+                 EST_PRETE=F                 EST_PRETE=T            EST_RECUPEREE=T
+                 EST_RECUP=F                 EST_RECUP=F
+```
+
+Côté UI, **la vue vendeur** (`ucListeCommandes` → BtnRecuperee_Click) refuse
+le passage à récupérée si `EstPrete` est faux. **La fenêtre de détail** désactive
+visuellement le bouton dans le même cas. C'est la **même règle**, appliquée
+des deux côtés (UI vendeur ET pop-up détail).
+
+### Côté pâtissier (`ucListeCommandesChef`)
+
+Vue simple : 2 filtres (**À préparer** par défaut, **Toutes**), DataGrid des
+commandes, bouton « Marquer prête » sur la ligne sélectionnée, double-clic =
+fenêtre de détail. Le bouton « Produits » de l'accueil pâtissier affiche un
+message d'information : la gestion des produits est sur le périmètre du
+coéquipier.
+
+**`LigneAffichage`** : classe interne au UC, utilisée **uniquement à l'écran**
+pendant la saisie. Elle a `Produit`, `Quantite`, et des propriétés calculées
+(`Libelle`, `PrixUnitaire`, `SousTotal`). Au moment du *Valider*, on la
+convertit en `LigneCommande` (qui, elle, va en base).
+
+**`ObservableCollection<LigneAffichage>`** : c'est une liste qui **notifie le
+DataGrid** quand on ajoute/retire un élément. Si on utilisait une `List<T>`
+normale, le DataGrid ne se mettrait pas à jour tout seul.
+
+**Acompte = total / 4** : recalculé à chaque ajout/retrait via
+`RecalculerTotaux()`. La valeur affichée à l'écran est aussi celle envoyée
+en base.
+
+### Validation à l'enregistrement
+
+| Règle | Message |
+|-------|---------|
+| Client choisi | « Choisissez un client. » |
+| Date de retrait remplie | « Saisissez une date de retrait. » |
+| Date de retrait ≥ aujourd'hui | « La date de retrait doit être aujourd'hui ou plus tard. » |
+| Au moins 1 produit | « Ajoutez au moins un produit à la commande. » |
+| Nb personnes (si rempli) entier ≥ 1 | « Nombre de personnes invalide. » |
+| Quantité par ligne entier ≥ 1 | « Quantité invalide (entier >= 1). » |
+
+### Sélection du client (`FenetreChoixClient`)
+
+- À l'ouverture, on affiche tous les clients.
+- La saisie filtre la liste en direct (`Client.Rechercher`).
+- Double-clic ou bouton « Choisir » sur une ligne sélectionnée → renvoie le
+  client à `ucNouvelleCommande` via la propriété `ClientChoisi`.
+- Bouton « + Créer ce client » → ouvre `FenetreFicheClient` ; si la création
+  réussit, on **récupère le nouveau client** via sa propriété `ClientCree`
+  (ajoutée pour ça) et on le sélectionne directement.
+
+```csharp
+private void BtnCreer_Click(object sender, RoutedEventArgs e)
+{
+    FenetreFicheClient fiche = new FenetreFicheClient();
+    fiche.Owner = this;
+    bool? resultat = fiche.ShowDialog();
+    if (resultat == true && fiche.ClientCree != null)
+    {
+        clientChoisi = fiche.ClientCree;
+        DialogResult = true;
+        Close();
+    }
+}
+```
+
+---
+
+## 10. Fonctionnalité Produits (côté pâtissier)
+
+Accessible depuis l'accueil pâtissier → bouton **Produits**.
+
+### Écrans
+
+| Écran | Rôle |
+|-------|------|
+| `ucListeProduits` | Liste des recettes en cartes (filtres catégorie + recherche), bouton « + Nouvelle recette ». Click sur une carte = édition. |
+| `FenetreFicheRecette` | Modale unique qui gère **création** ET **édition**. En création le panneau « Tailles » est masqué jusqu'au 1er Enregistrer. |
+| `FenetreFicheProduit` | Petite modale qui saisit une nouvelle taille (nb parts + prix). |
+
+### Méthode `Recette.Lister()` — JOIN + sous-requêtes
+
+```sql
+SELECT R.RECETTE_ID, R.CATEGORIE_ID, R.RECETTE_NOM, R.RECETTE_DESCRIPTION,
+       C.CATEGORIE_NOM,
+       (SELECT MIN(P.PRIX) FROM PRODUIT P WHERE P.RECETTE_ID = R.RECETTE_ID) AS PRIX_MIN,
+       (SELECT MAX(P.PRIX) FROM PRODUIT P WHERE P.RECETTE_ID = R.RECETTE_ID) AS PRIX_MAX,
+       (SELECT COUNT(*) FROM PRODUIT P WHERE P.RECETTE_ID = R.RECETTE_ID) AS NB_TAILLES
+FROM RECETTE R
+JOIN CATEGORIE C ON C.CATEGORIE_ID = R.CATEGORIE_ID
+ORDER BY C.CATEGORIE_NOM, R.RECETTE_NOM
+```
+
+- Les **sous-requêtes** (`SELECT ... FROM PRODUIT ...`) sont exécutées **pour chaque ligne**
+  de RECETTE. On les utilise pour les **agrégats** (MIN/MAX/COUNT) qui ne sont pas dans
+  RECETTE elle-même.
+- **`COUNT(*)`** retourne un `bigint` en PostgreSQL → côté C# on lit avec `GetInt64`
+  et on caste en `int`.
+- Propriétés transitoires sur `Recette` : `CategorieNom`, `PrixMin`, `PrixMax`,
+  `NbTailles`, plus `LibellePrix` (calculée) qui s'affiche sur la carte.
+
+### Méthode `Recette.Enregistrer()` — INSERT ou UPDATE selon l'id
+
+```csharp
+public void Enregistrer()
+{
+    using (NpgsqlConnection cn = Connexion.Ouvrir())
+    {
+        if (recetteId == 0)
+        {
+            // CREATION : INSERT ... RETURNING RECETTE_ID
+        }
+        else
+        {
+            // MISE A JOUR : UPDATE ... WHERE RECETTE_ID = @id
+        }
+    }
+}
+```
+
+`recetteId == 0` signifie « pas encore en base ». Après l'INSERT, on récupère
+l'id généré via `RETURNING` ce qui permet à la fenêtre de basculer en mode
+édition.
+
+### Allergènes : `MettreAJourAllergenes(List<int>)`
+
+Pattern **« DELETE all + INSERT new »** dans une **transaction** :
+
+```csharp
+public void MettreAJourAllergenes(List<int> nouveauxIds)
+{
+    using (NpgsqlConnection cn = Connexion.Ouvrir())
+    using (NpgsqlTransaction tx = cn.BeginTransaction())
+    {
+        try
+        {
+            // 1) On supprime TOUS les liens existants
+            // 2) On INSERT un lien par allergene coche
+            tx.Commit();
+        }
+        catch { tx.Rollback(); throw; }
+    }
+}
+```
+
+- Plus simple que comparer « ce qui a été ajouté / retiré » entre l'état BD et
+  l'état UI. La transaction garantit qu'on ne se retrouve pas avec des liens
+  partiellement supprimés.
+
+### `Recette.Supprimer()` — ordre des DELETE
+
+La FK `RECETTE_ALLERGENE.RECETTE_ID` est en `on delete restrict` (pas de
+CASCADE). On doit donc :
+1. DELETE des liens RECETTE_ALLERGENE pour cette recette.
+2. DELETE de la recette elle-même.
+
+→ Encapsulé dans une transaction. Si l'étape 2 échoue (parce qu'il existe
+encore des PRODUIT pour cette recette → erreur SQL `23503`), on **rollback**
+l'étape 1 aussi : pas d'incohérence (les allergènes ne disparaissent pas
+silencieusement).
+
+### Côté UI — `FenetreFicheRecette`
+
+**Mode création** (`recette == null` passée au constructeur) :
+- Construit un objet `Recette()` neuf (RecetteId = 0).
+- Le panneau « Tailles » est **masqué** (on ne peut pas ajouter une taille à
+  une recette qui n'a pas d'id).
+- Au clic Enregistrer → INSERT → on récupère l'id → on **bascule sur le mode
+  édition** (méthode `PreparerEdition()` qui affiche le panneau Tailles).
+
+**Mode édition** (`recette != null`) :
+- Préremplit le formulaire à partir de l'objet reçu.
+- Coche les allergènes via `recette.ListerMesAllergenes()`.
+- Charge les tailles via `Produit.ListerParRecette(recette.RecetteId)`.
+- Boutons sur chaque ligne tailles : **Basculer dispo** (UPDATE immédiat) /
+  **Supprimer** (DELETE immédiat, gère le `23503` si le produit est utilisé
+  dans une commande).
+- Bouton « **Supprimer la recette** » en bas (visible uniquement en édition).
+
+### Images des recettes
+
+Les recettes ont une colonne **`IMAGE_PATH VARCHAR(500) NULL`** dans la table
+`RECETTE` (ajoutée par `bd/04_image_path.sql` — déjà appliquée). On y stocke
+le **chemin absolu** d'une image sur le poste (`C:\...\fraisier.jpg`).
+
+**Limitation assumée** : si le fichier est déplacé / supprimé / si le projet
+tourne sur une autre machine, l'image ne se chargera pas. Pour le rendu de la
+SAE on suppose que les images sont stockées dans un dossier stable.
+
+**Picker** (dans `FenetreFicheRecette`) :
+```csharp
+OpenFileDialog dialog = new OpenFileDialog();
+dialog.Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif";
+if (dialog.ShowDialog(this) == true)
+{
+    recette.ImagePath = dialog.FileName;
+    AfficherImage(recette.ImagePath);
+}
+```
+
+**Chargement sans verrou** (important : sinon le fichier reste verrouillé tant
+que l'image est affichée) :
+```csharp
+BitmapImage img = new BitmapImage();
+img.BeginInit();
+img.CacheOption = BitmapCacheOption.OnLoad;   // copie en memoire puis libere
+img.UriSource = new Uri(chemin, UriKind.Absolute);
+img.EndInit();
+ApercuImage.Source = img;
+```
+
+**Cartes** : un `Image` lié à `{Binding ImagePath}` en haut de la carte
+(au-dessus du texte). Si le chemin est invalide, le `Image` se laisse vide et
+le fond sombre apparaît à la place — pas d'erreur.
+
+### Indisponibilité (`Produit.EstIndisponible`)
+
+Sur la fiche recette, chaque taille a :
+- une colonne **« Disponible »** avec une `CheckBox` liée à la propriété
+  **transitoire** `EstDisponible` (= `!EstIndisponible`) — sens **positif**,
+  plus lisible ;
+- un bouton dont le **texte est dynamique** : binding sur la propriété
+  transitoire `LibelleBoutonDispo` qui renvoie *« Rendre dispo »* ou
+  *« Marquer indispo »* selon l'état actuel ;
+- un **fond vert ou orange** selon l'état (via `DataTrigger` sur
+  `EstIndisponible` dans le template du bouton) ;
+- la **ligne entière** passe en rose clair si indisponible (`DataGrid.RowStyle`
+  + `DataTrigger`).
+
+Côté vendeur, `Produit.Lister()` filtre `WHERE EST_INDISPONIBLE = FALSE` →
+les produits indisponibles disparaissent automatiquement de la pop-up de choix
+des tailles dans « Nouvelle commande ».
+
+### Allergènes en CheckBoxes — pattern `AllergeneAffichage`
+
+Pour gérer l'état coché/non-coché, on utilise une petite classe wrapper :
+
+```csharp
+public class AllergeneAffichage
+{
+    private Allergene allergene;
+    private bool isCochee;
+    public Allergene Allergene { get => allergene; set => allergene = value; }
+    public bool IsCochee { get => isCochee; set => isCochee = value; }
+    public int AllergeneId { get => allergene.AllergeneId; }
+    public string AllergeneNom { get => allergene.AllergeneNom; }
+    ...
+}
+```
+
+Et dans le XAML, **`IsChecked="{Binding IsCochee, Mode=TwoWay}"`** synchronise
+automatiquement la propriété C# avec l'état de la CheckBox. À l'enregistrement
+on itère sur la liste pour récupérer les `AllergeneId` cochés et on appelle
+`MettreAJourAllergenes`.
+
+---
+
+## 11. Où trouver quoi (index)
 
 | Je veux… | Fichier |
 |----------|---------|
@@ -635,6 +1117,15 @@ if (!Regex.IsMatch(telephone, MotifTelephone)) { /* erreur */ }
 | Changer les règles de validation client | `uc/FenetreFicheClient.xaml.cs` |
 | Modifier l'affichage des commandes d'un client | `uc/FenetreCommandesClient.xaml` |
 | Modifier la requête « commandes d'un client » | `Metier/Commande.cs` (`ListerParClient`) |
+| Modifier la requête « commandes du jour » | `Metier/Commande.cs` (`ListerDuJour`) |
+| Toucher au flux de création d'une commande | `uc/ucNouvelleCommande.xaml(.cs)` |
+| Changer la transaction d'enregistrement | `Metier/Commande.cs` (`Enregistrer`) |
+| Changer la règle « acompte = total / 4 » | `uc/ucNouvelleCommande.xaml.cs` (`RecalculerTotaux` + `BtnValider_Click`) |
+| Filtrer les produits affichés au vendeur | `Metier/Produit.cs` (`Lister`) |
+| Modifier le formulaire de la fiche recette | `uc/FenetreFicheRecette.xaml(.cs)` |
+| Modifier la requête « liste des recettes » | `Metier/Recette.cs` (`Lister`) |
+| Ajouter une nouvelle taille à une recette | `uc/FenetreFicheProduit.xaml(.cs)` + `Metier/Produit.cs` (`Enregistrer`) |
+| Changer le comportement des allergènes | `Metier/Recette.cs` (`MettreAJourAllergenes`) + `uc/FenetreFicheRecette.xaml.cs` (`AllergeneAffichage`) |
 | Naviguer vers un nouvel écran | depuis n'importe quel `.cs` : `((MainWindow)Application.Current.MainWindow).Naviguer(new ...)` |
 | Modifier le jeu d'essais BD | `bd/03_jeu_essais.sql` |
 | Ajouter / modifier une table | `bd/01_crebas.sql` (rejouer tout) |

@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using Npgsql;
+
 namespace SAE_Paul.Metier
 {
     public class CategorieEvenement
@@ -19,6 +22,35 @@ namespace SAE_Paul.Metier
         public CategorieEvenement()
         {
             categorieEvenementNom = "";
+        }
+
+        /// <summary>
+        /// Retourne toutes les categories d'evenement, triees par nom.
+        /// Utilisee pour alimenter un ComboBox dans la nouvelle commande.
+        /// </summary>
+        public static List<CategorieEvenement> Lister()
+        {
+            List<CategorieEvenement> resultat = new List<CategorieEvenement>();
+
+            using (NpgsqlConnection cn = Connexion.Ouvrir())
+            {
+                string sql = "SELECT CATEGORIE_EVENEMENT_ID, CATEGORIE_EVENEMENT_NOM "
+                           + "FROM CATEGORIE_EVENEMENT ORDER BY CATEGORIE_EVENEMENT_NOM";
+
+                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
+                using (NpgsqlDataReader lecteur = cmd.ExecuteReader())
+                {
+                    while (lecteur.Read())
+                    {
+                        CategorieEvenement ce = new CategorieEvenement();
+                        ce.CategorieEvenementId = lecteur.GetInt32(0);
+                        ce.CategorieEvenementNom = lecteur.GetString(1);
+                        resultat.Add(ce);
+                    }
+                }
+            }
+
+            return resultat;
         }
     }
 }

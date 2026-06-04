@@ -105,6 +105,7 @@ create table RECETTE (
    CATEGORIE_ID         INT4                 not null,
    RECETTE_NOM          VARCHAR(100)         not null,
    RECETTE_DESCRIPTION  TEXT                 null,
+   IMAGE_PATH           VARCHAR(500)         null,
    constraint PK_RECETTE primary key (RECETTE_ID),
    constraint AK_UK_RECETTE_NOM_RECETTE unique (RECETTE_NOM)
 );

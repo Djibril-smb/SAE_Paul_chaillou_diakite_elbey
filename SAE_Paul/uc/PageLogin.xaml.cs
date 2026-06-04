@@ -5,12 +5,10 @@ using SAE_Paul.Metier;
 
 namespace SAE_Paul
 {
-    /// <summary>
     /// Ecran de connexion.
     /// Mecanisme : le mot de passe saisi est celui de la base PostgreSQL (commun aux 2 acteurs).
     /// L'identifiant saisi est cherche dans la table UTILISATEUR pour connaitre le ROLE,
-    /// puis on affiche l'accueil correspondant (vendeur ou patissier).
-    /// </summary>
+    /// puis on affiche l'accueil correspondant (vendeur ou patissier)
     public partial class PageLogin : UserControl
     {
         public PageLogin()
@@ -56,6 +54,10 @@ namespace SAE_Paul
             }
 
             // 4) Routage vers le bon ecran d'accueil selon le role.
+            //    On memorise le role dans Connexion pour que les ecrans partages
+            //    (ex. Produits) sachent ou retourner.
+            Connexion.DefinirRole(utilisateur.Role);
+
             MainWindow fenetre = (MainWindow)Application.Current.MainWindow;
             if (utilisateur.Role == "VENDEUR")
                 fenetre.Naviguer(new uc.ucPageAccueilVendeur());
