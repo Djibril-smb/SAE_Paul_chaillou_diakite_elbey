@@ -4,10 +4,11 @@ namespace SAE_Paul.Metier
 {
     public static class Connexion
     {
-        private const string Hote = "localhost";
-        private const int Port = 5432;
-        private const string Base = "boulangerie_paul";
-        private const string LoginBd = "postgres"; // login BD commun, ecrit en dur
+        private const string Hote = "srv-peda-new";
+        private const int Port = 5433;
+        private const string Base = "sae_paul";
+        private const string Schema = "sae_paul";
+        private const string LoginBd = "elbeyi"; // login BD commun, ecrit en dur
 
         // Mot de passe saisi au login.
         private static string? _motDePasse;
@@ -31,7 +32,7 @@ namespace SAE_Paul.Metier
         public static NpgsqlConnection Ouvrir()
         {
             string chaine =
-                $"Host={Hote};Port={Port};Database={Base};Username={LoginBd};Password={_motDePasse}";
+                $"Host={Hote};Port={Port};Database={Base};Username={LoginBd};Password={_motDePasse};Options='-c search_path={Schema}'";
             NpgsqlConnection cn = new NpgsqlConnection(chaine);
             cn.Open();
             return cn;
