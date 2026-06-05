@@ -24,7 +24,7 @@ namespace SAE_Paul.Metier
             allergeneNom = "";
         }
 
-        /// <summary>Liste tous les allergenes tries par nom. Sert aux cases a cocher de la fiche recette.</summary>
+        //liste des allergènes
         public static List<Allergene> Lister()
         {
             List<Allergene> resultat = new List<Allergene>();

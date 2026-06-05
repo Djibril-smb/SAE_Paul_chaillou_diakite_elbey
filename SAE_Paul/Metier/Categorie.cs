@@ -24,7 +24,7 @@ namespace SAE_Paul.Metier
             categorieNom = "";
         }
 
-        /// <summary>Liste toutes les categories triees par nom. Sert au ComboBox de la fiche recette.</summary>
+        //liste des categories triées par nom --> combobox de choix de catégorie
         public static List<Categorie> Lister()
         {
             List<Categorie> resultat = new List<Categorie>();

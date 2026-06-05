@@ -43,14 +43,12 @@ namespace SAE_Paul.Metier
             telephone = "";
         }
 
-        /// <summary>
-        /// Retourne tous les clients, tries par nom puis prenom.
-        /// </summary>
+        //liste des clients triés par nom et prenom      
         public static List<Client> Lister()
         {
             List<Client> resultat = new List<Client>();
 
-            // 'using' = la connexion est fermee automatiquement a la fin du bloc.
+            // 'using' = la connexion est fermee automatiquement a la fin du bloc
             using (NpgsqlConnection cn = Connexion.Ouvrir())
             {
                 string sql = "SELECT CLIENT_ID, NOM, PRENOM, TELEPHONE, MAIL "
@@ -59,7 +57,7 @@ namespace SAE_Paul.Metier
                 using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
                 using (NpgsqlDataReader lecteur = cmd.ExecuteReader())
                 {
-                    // On avance ligne par ligne dans le resultat du SELECT.
+                    //on travaille ligne par ligne sur le result du Select
                     while (lecteur.Read())
                     {
                         resultat.Add(LireDepuis(lecteur));
@@ -70,9 +68,8 @@ namespace SAE_Paul.Metier
             return resultat;
         }
 
-        /// <summary>
-        /// Recherche les clients dont le nom, prenom ou telephone contient 'texte'.
-        /// </summary>
+
+        //methode de recherche de client
         public static List<Client> Rechercher(string texte)
         {
             List<Client> resultat = new List<Client>();
@@ -85,7 +82,7 @@ namespace SAE_Paul.Metier
 
                 using (NpgsqlCommand cmd = new NpgsqlCommand(sql, cn))
                 {
-                    // Parametre => protege contre l'injection SQL. Les % = "contient".
+                    // Parametre => protege contre l'injection SQL. Les % = "contient"
                     cmd.Parameters.AddWithValue("motif", "%" + texte + "%");
 
                     using (NpgsqlDataReader lecteur = cmd.ExecuteReader())
@@ -101,14 +98,13 @@ namespace SAE_Paul.Metier
             return resultat;
         }
 
-        /// <summary>
-        /// Insere le client courant dans la base et recupere l'identifiant genere.
-        /// </summary>
+
+        //insertion di client dans la base de données
         public void Enregistrer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
             {
-                // RETURNING CLIENT_ID : PostgreSQL nous renvoie l'id auto-genere (SERIAL).
+                // RETURNING CLIENT_ID : PostgreSQL nous renvoie l'id auto-generée
                 string sql = "INSERT INTO CLIENT (NOM, PRENOM, TELEPHONE, MAIL) "
                            + "VALUES (@nom, @prenom, @telephone, @mail) RETURNING CLIENT_ID";
 
@@ -119,17 +115,15 @@ namespace SAE_Paul.Metier
                     cmd.Parameters.AddWithValue("telephone", telephone);
                     cmd.Parameters.AddWithValue("mail", (object?)mail ?? System.DBNull.Value);
 
-                    // ExecuteScalar = recupere la 1re colonne de la 1re ligne (ici CLIENT_ID).
+                    // ExecuteScalar = recupere la 1re colonne de la 1re ligne (ici CLIENT_ID)
                     clientId = (int)cmd.ExecuteScalar()!;
                 }
             }
         }
 
-        /// <summary>
-        /// Supprime le client courant de la base.
-        /// Si le client a des commandes, la BD refuse (FK on delete restrict)
-        /// et on remonte une PostgresException de code 23503.
-        /// </summary>
+        // Supprime le client courant de la base.
+        // Si le client a des commandes, la BD refuse (FK on delete restrict)
+        // et on remonte une PostgresException de code 23503.
         public void Supprimer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -144,9 +138,7 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Fabrique un objet Client a partir de la ligne courante du lecteur.
-        /// </summary>
+        //fabrique un objet Client a partir de la ligne courante du lecteur
         private static Client LireDepuis(NpgsqlDataReader lecteur)
         {
             Client c = new Client();

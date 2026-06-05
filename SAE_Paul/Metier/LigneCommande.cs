@@ -10,7 +10,7 @@ namespace SAE_Paul.Metier
         private int quantite;
         private bool estDecoupe;
 
-        // Champs d'affichage uniquement (remplis par JOIN, pas stockes dans LIGNE_COMMANDE).
+        //champs d'affichage uniquement (remplis par JOIN, pas stockes dans LIGNE_COMMANDE)
         private string? libelle;
         private decimal prixUnitaire;
 
@@ -53,10 +53,10 @@ namespace SAE_Paul.Metier
         {
         }
 
-        /// <summary>
-        /// Retourne toutes les lignes d'une commande, avec le libelle du produit
-        /// (categorie + nom + nb parts) et son prix unitaire actuel.
-        /// </summary>
+        
+        //retourne toutes les lignes d'une commande, avec le libelle du produit
+        //(categorie + nom + nb parts) et son prix unitaire actuel
+        
         public static List<LigneCommande> ListerParCommande(int commandeId)
         {
             List<LigneCommande> resultat = new List<LigneCommande>();

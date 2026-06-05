@@ -24,10 +24,7 @@ namespace SAE_Paul.Metier
             categorieEvenementNom = "";
         }
 
-        /// <summary>
-        /// Retourne toutes les categories d'evenement, triees par nom.
-        /// Utilisee pour alimenter un ComboBox dans la nouvelle commande.
-        /// </summary>
+        //liste des categories d'evenements --> combobox choix d'evenement (creation de commande)
         public static List<CategorieEvenement> Lister()
         {
             List<CategorieEvenement> resultat = new List<CategorieEvenement>();

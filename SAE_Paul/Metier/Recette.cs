@@ -12,7 +12,7 @@ namespace SAE_Paul.Metier
         private string? recetteDescription;
         private string? imagePath;
 
-        // Champs d'affichage (remplis par JOIN dans Lister).
+        //champs d'affichage (remplis par JOIN dans Lister)
         private string? categorieNom;
         private decimal? prixMin;
         private decimal? prixMax;
@@ -64,7 +64,7 @@ namespace SAE_Paul.Metier
             set => nbTailles = value;
         }
 
-        /// <summary>Texte affiche sur la carte recette.</summary>
+        //texte affiche sur la carte recette
         public string LibellePrix
         {
             get
@@ -85,10 +85,10 @@ namespace SAE_Paul.Metier
         //  Lecture
         // -------------------------------------------------------------------
 
-        /// <summary>
-        /// Liste toutes les recettes avec leur categorie et la fourchette de prix
-        /// (calculee par sous-requete sur PRODUIT).
-        /// </summary>
+        
+        ///liste toutes les recettes avec leur categorie et la fourchette de prix
+        ///(calculee par sous-requete sur PRODUIT)
+        
         public static List<Recette> Lister()
         {
             List<Recette> resultat = new List<Recette>();
@@ -136,7 +136,7 @@ namespace SAE_Paul.Metier
             return resultat;
         }
 
-        /// <summary>Retourne les IDs des allergenes lies a cette recette.</summary>
+        //retourne les IDs des allergenes lies a cette recette
         public List<int> ListerMesAllergenes()
         {
             List<int> resultat = new List<int>();
@@ -164,9 +164,9 @@ namespace SAE_Paul.Metier
         //  Ecriture
         // -------------------------------------------------------------------
 
-        /// <summary>
-        /// Cree (RecetteId == 0) ou met a jour la recette.
-        /// </summary>
+        
+        //cree (RecetteId == 0) ou met a jour la recette
+        
         public void Enregistrer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -211,10 +211,10 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Remplace les allergenes lies a cette recette par la liste passee.
-        /// DELETE puis INSERT, dans une transaction.
-        /// </summary>
+        
+        //remplace les allergenes lies a cette recette par la liste passee
+        //DELETE puis INSERT, dans une transaction
+        
         public void MettreAJourAllergenes(List<int> nouveauxIds)
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -251,10 +251,10 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Supprime la recette ET ses liens d'allergenes, dans une transaction.
-        /// Echoue (PostgresException 23503) si des PRODUIT existent encore.
-        /// </summary>
+        
+        //supprime la recette ET ses liens d'allergenes, dans une transaction
+        //echoue (PostgresException 23503) si des PRODUIT existent encore
+        
         public void Supprimer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())

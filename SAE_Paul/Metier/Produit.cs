@@ -11,7 +11,7 @@ namespace SAE_Paul.Metier
         private int nbParts;
         private decimal prix;
 
-        // Champs d'affichage uniquement (remplis par JOIN, pas stockes dans PRODUIT).
+        //champs d'affichage uniquement (remplis par JOIN, pas stockes dans PRODUIT)
         private string? recetteNom;
         private string? categorieNom;
         private string? imagePath;
@@ -57,22 +57,22 @@ namespace SAE_Paul.Metier
             set => imagePath = value;
         }
 
-        /// <summary>Inverse de EstIndisponible, pour un affichage positif a l'ecran.</summary>
+        //inverse de EstIndisponible, pour un affichage positif a l'ecran
         public bool EstDisponible
         {
             get => !estIndisponible;
         }
 
-        /// <summary>Libelle dynamique du bouton "marquer indispo / rendre dispo".</summary>
+        //libelle dynamique du bouton "marquer indispo / rendre dispo"
         public string LibelleBoutonDispo
         {
             get => estIndisponible ? "Rendre dispo" : "Marquer indispo";
         }
 
-        /// <summary>
-        /// Libelle pret a afficher dans un ComboBox.
-        /// Ex : "Gateaux - Fraisier (8 parts) - 44.00 €".
-        /// </summary>
+        
+        //lLibelle pret a afficher dans un ComboBox
+        //ex : "Gateaux - Fraisier (8 parts) - 44.00 €"
+        
         public string Libelle
         {
             get => (categorieNom ?? "") + " - " + (recetteNom ?? "") +
@@ -83,10 +83,10 @@ namespace SAE_Paul.Metier
         {
         }
 
-        /// <summary>
-        /// Retourne tous les produits d'une recette (disponibles ET indisponibles).
-        /// Utilise par la fiche recette (gestion des tailles).
-        /// </summary>
+        
+        //retourne tous les produits d'une recette (disponibles ET indisponibles)
+        //utilise par la fiche recette (gestion des tailles)
+        
         public static List<Produit> ListerParRecette(int recetteId)
         {
             List<Produit> resultat = new List<Produit>();
@@ -119,7 +119,7 @@ namespace SAE_Paul.Metier
             return resultat;
         }
 
-        /// <summary>Insere un nouveau produit (taille) pour une recette. Recupere l'id genere.</summary>
+        //insere un nouveau produit (taille) pour une recette. Recupere l'id genere
         public void Enregistrer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -138,9 +138,9 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Bascule l'indisponibilite (TRUE/FALSE) du produit.
-        /// </summary>
+        
+        //bascule l'indisponibilite (TRUE/FALSE) du produit
+        
         public void BasculerDisponibilite()
         {
             estIndisponible = !estIndisponible;
@@ -158,9 +158,9 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Supprime ce produit. Echoue (23503) s'il est reference par des LIGNE_COMMANDE.
-        /// </summary>
+        
+        //supprime ce produit. Echoue (23503) s'il est reference par des LIGNE_COMMANDE
+        
         public void Supprimer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -175,10 +175,10 @@ namespace SAE_Paul.Metier
             }
         }
 
-        /// <summary>
-        /// Retourne tous les produits disponibles (non indisponibles),
-        /// avec le nom de la recette et de la categorie via JOIN.
-        /// </summary>
+        
+        //retourne tous les produits disponibles (non indisponibles),
+        //avec le nom de la recette et de la categorie via JOIN
+        
         public static List<Produit> Lister()
         {
             List<Produit> resultat = new List<Produit>();

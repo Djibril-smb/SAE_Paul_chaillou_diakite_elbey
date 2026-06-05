@@ -24,9 +24,9 @@ namespace SAE_Paul.Metier
             role = "";
         }
 
-        /// <summary>
-        /// Cherche un utilisateur par son login. Retourne null s'il n'existe pas.
-        /// </summary>
+        
+        //cherche un utilisateur par son login. Retourne null s'il n'existe pas
+        
         public static Utilisateur? Trouver(string login)
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())

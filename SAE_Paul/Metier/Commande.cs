@@ -19,7 +19,7 @@ namespace SAE_Paul.Metier
         private int? nbPersonne;
         private List<LigneCommande> lignes;
 
-        // Champs d'affichage uniquement (remplis par JOIN, pas stockes dans COMMANDE).
+
         private string? categorieEvenementNom;
         private string? clientNom;
         private string? clientPrenom;
@@ -100,9 +100,9 @@ namespace SAE_Paul.Metier
             set => clientPrenom = value;
         }
 
-        /// <summary>
-        /// Pour l'affichage : "Marie Dupont" (ou "Dupont" si pas de prenom).
-        /// </summary>
+
+        //pour l'affichage : "Marie Dupont" (ou "Dupont" si pas de prenom)
+
         public string ClientNomComplet
         {
             get => ((clientPrenom ?? "") + " " + (clientNom ?? "")).Trim();
@@ -117,10 +117,10 @@ namespace SAE_Paul.Metier
         //  Lectures
         // -------------------------------------------------------------------
 
-        /// <summary>
-        /// Retourne toutes les commandes d'un client, des plus recentes aux plus anciennes.
-        /// Le LEFT JOIN ramene le nom de l'evenement pour l'affichage (peut etre NULL).
-        /// </summary>
+
+        //retourne toutes les commandes d'un client, des plus recentes aux plus anciennes
+        //le LEFT JOIN ramene le nom de l'evenement pour l'affichage (peut etre NULL)
+
         public static List<Commande> ListerParClient(int clientId)
         {
             List<Commande> resultat = new List<Commande>();
@@ -158,47 +158,47 @@ namespace SAE_Paul.Metier
             return resultat;
         }
 
-        /// <summary>Toutes les commandes, des plus recentes aux plus anciennes.</summary>
+        //toutes les commandes, des plus recentes aux plus anciennes
         public static List<Commande> Lister()
         {
             return ListerAvecFiltre("ORDER BY C.DATE_RETRAIT DESC, CL.NOM");
         }
 
-        /// <summary>Commandes pas encore recuperees (a preparer).</summary>
+        //commandes pas encore recuperees (a preparer)
         public static List<Commande> ListerEnCours()
         {
             return ListerAvecFiltre("WHERE C.EST_RECUPEREE = FALSE "
                                   + "ORDER BY C.DATE_RETRAIT, CL.NOM");
         }
 
-        /// <summary>Commandes deja recuperees (terminees).</summary>
+        //commandes deja recuperees (terminees)
         public static List<Commande> ListerRecuperees()
         {
             return ListerAvecFiltre("WHERE C.EST_RECUPEREE = TRUE "
                                   + "ORDER BY C.DATE_RETRAIT DESC, CL.NOM");
         }
 
-        /// <summary>Commandes dont la date de retrait est AUJOURD'HUI.</summary>
+        //commandes dont la date de retrait est AUJOURD'HUI
         public static List<Commande> ListerDuJour()
         {
             return ListerAvecFiltre("WHERE C.DATE_RETRAIT = CURRENT_DATE "
                                   + "ORDER BY C.EST_RECUPEREE, CL.NOM, CL.PRENOM");
         }
 
-        /// <summary>
-        /// Pour le patissier : commandes pas encore pretes ET pas encore recuperees.
-        /// Triees par date de retrait croissante (les plus urgentes en haut).
-        /// </summary>
+
+        //pour le patissier : commandes pas encore pretes ET pas encore recuperees
+        //triees par date de retrait croissante (les plus urgentes en haut)
+
         public static List<Commande> ListerAPreparer()
         {
             return ListerAvecFiltre("WHERE C.EST_PRETE = FALSE AND C.EST_RECUPEREE = FALSE "
                                   + "ORDER BY C.DATE_RETRAIT, CL.NOM");
         }
 
-        /// <summary>
-        /// Helper interne : meme SELECT pour tous les listings (JOIN client + LEFT JOIN evenement),
-        /// avec une clause WHERE / ORDER BY differente passee en parametre.
-        /// </summary>
+
+        //helper interne : meme SELECT pour tous les listings (JOIN client + LEFT JOIN evenement)
+        //avec une clause WHERE / ORDER BY differente passee en parametre
+
         private static List<Commande> ListerAvecFiltre(string whereOrderBy)
         {
             List<Commande> resultat = new List<Commande>();
@@ -243,11 +243,11 @@ namespace SAE_Paul.Metier
         //  Ecritures
         // -------------------------------------------------------------------
 
-        /// <summary>
-        /// Insere la commande ET toutes ses lignes dans une TRANSACTION :
-        /// si l'insert d'une ligne echoue, la commande entiere est annulee.
-        /// Le CommandeId genere est ensuite reaffecte aux lignes.
-        /// </summary>
+
+        //insere la commande ET toutes ses lignes dans une TRANSACTION :
+        //si l'insert d'une ligne echoue, la commande entiere est annulee
+        //le CommandeId genere est ensuite reaffecte aux lignes
+
         public void Enregistrer()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -255,7 +255,7 @@ namespace SAE_Paul.Metier
             {
                 try
                 {
-                    // 1) Insert de l'en-tete COMMANDE.
+                    // 1) Insert de l'en-tete COMMANDE
                     string sqlCmd = "INSERT INTO COMMANDE "
                                   + "  (CATEGORIE_EVENEMENT_ID, CLIENT_ID, DATE_CREATION, DATE_RETRAIT, "
                                   + "   ACOMPTE, TOTAL, DATE_EVENEMENT, NB_PERSONNE) "
@@ -277,7 +277,7 @@ namespace SAE_Paul.Metier
                         commandeId = (int)cmd.ExecuteScalar()!;
                     }
 
-                    // 2) Insert de chaque LIGNE_COMMANDE.
+                    // 2) Insert de chaque LIGNE_COMMANDE
                     string sqlLn = "INSERT INTO LIGNE_COMMANDE "
                                  + "  (COMMANDE_ID, PRODUIT_ID, QUANTITE, EST_DECOUPE) "
                                  + "VALUES (@cmdId, @prodId, @qte, @decoupe)";
@@ -296,21 +296,21 @@ namespace SAE_Paul.Metier
                         }
                     }
 
-                    // 3) On valide la transaction : tout est ecrit en base.
+                    // 3) On valide la transaction : tout est ecrit en base
                     tx.Commit();
                 }
                 catch
                 {
-                    // Echec : on annule TOUT (l'en-tete et les lignes deja inserees).
+                    // Echec : on annule TOUT (l'en-tete et les lignes deja inserees)
                     tx.Rollback();
                     throw;
                 }
             }
         }
 
-        /// <summary>
-        /// Marque la commande comme prete (cote patissier).
-        /// </summary>
+
+        //marque la commande comme prete (cote patissier)
+
         public void MarquerPrete()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -327,9 +327,9 @@ namespace SAE_Paul.Metier
             estPrete = true;
         }
 
-        /// <summary>
-        /// Marque la commande comme recuperee par le client.
-        /// </summary>
+        
+        //marque la commande comme recuperee par le client
+        
         public void MarquerRecuperee()
         {
             using (NpgsqlConnection cn = Connexion.Ouvrir())
@@ -343,7 +343,7 @@ namespace SAE_Paul.Metier
                 }
             }
 
-            // On reflete l'etat en memoire pour ne pas avoir a recharger toute la liste.
+            //on reflete l'etat en memoire pour ne pas avoir a recharger toute la liste
             estRecuperee = true;
         }
 
@@ -351,11 +351,11 @@ namespace SAE_Paul.Metier
         //  Helper de lecture
         // -------------------------------------------------------------------
 
-        /// <summary>
-        /// Lit les colonnes de la table COMMANDE depuis la ligne courante du lecteur.
-        /// Les colonnes issues de JOIN (nom client, nom evenement) sont lues a part
-        /// par la methode appelante car elles ne sont pas toujours dans le SELECT.
-        /// </summary>
+
+        //lit les colonnes de la table COMMANDE depuis la ligne courante du lecteur
+        //les colonnes issues de JOIN (nom client, nom evenement) sont lues a part
+        //par la methode appelante car elles ne sont pas toujours dans le SELECT
+
         private static Commande LireBase(NpgsqlDataReader lecteur)
         {
             Commande c = new Commande();
